@@ -2213,6 +2213,7 @@ function setPasscodeVerified(verified) {
 
 function updateLockBadge() {
   const badge = document.getElementById('lockBadge');
+  const uploadArea = document.getElementById('uploadArea');
   if (!badge) return;
   if (!storedPasscodeHash) {
     badge.className = 'lock-badge no-lock';
@@ -2226,6 +2227,10 @@ function updateLockBadge() {
     badge.className = 'lock-badge locked';
     badge.innerHTML = '&#128274; Locked';
     badge.title = 'Click to unlock write access';
+  }
+
+  if (uploadArea) {
+    uploadArea.style.display = isPasscodeVerified() ? '' : 'none';
   }
 }
 
