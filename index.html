@@ -1,0 +1,2066 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TeamDynamix Release Notes</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+  :root {
+    --primary: #2563eb;
+    --primary-hover: #1d4ed8;
+    --bg: #f8fafc;
+    --card-bg: #ffffff;
+    --border: #e2e8f0;
+    --text: #1e293b;
+    --text-muted: #64748b;
+    --danger: #ef4444;
+    --success: #22c55e;
+    --warning: #f59e0b;
+    --tag-bg: #e0e7ff;
+    --tag-text: #3730a3;
+    --highlight: #fef08a;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+  }
+
+  .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+
+  header {
+    background: var(--primary);
+    color: white;
+    padding: 20px 0;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+
+  header .container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  header h1 { font-size: 1.5rem; }
+  header .stats { font-size: 0.875rem; opacity: 0.9; }
+  header .header-right { display: flex; align-items: center; gap: 10px; }
+  header .btn-header {
+    padding: 6px 14px;
+    border: 1px solid rgba(255,255,255,0.5);
+    border-radius: 6px;
+    background: rgba(255,255,255,0.12);
+    color: white;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s;
+  }
+  header .btn-header:hover { background: rgba(255,255,255,0.25); }
+
+  .toolbar {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 20px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: flex-end;
+  }
+
+  .toolbar .field { display: flex; flex-direction: column; gap: 4px; }
+  .toolbar .field label { font-size: 0.75rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .toolbar input, .toolbar select {
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 0.875rem;
+    background: white;
+  }
+
+  .toolbar input:focus, .toolbar select:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  }
+
+  #searchInput { min-width: 300px; }
+
+  .btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s;
+    white-space: nowrap;
+  }
+
+  .btn-primary { background: var(--primary); color: white; }
+  .btn-primary:hover { background: var(--primary-hover); }
+  .btn-outline { background: white; border: 1px solid var(--border); color: var(--text); }
+  .btn-outline:hover { background: var(--bg); }
+  .btn-danger { background: var(--danger); color: white; }
+  .btn-danger:hover { background: #dc2626; }
+  .btn-success { background: var(--success); color: white; }
+
+  .actions {
+    display: flex;
+    gap: 8px;
+    margin-left: auto;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .dropdown { position: relative; display: inline-block; }
+  .dropdown-menu {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: calc(100% + 6px);
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+    min-width: 170px;
+    z-index: 500;
+    padding: 4px 0;
+  }
+  .dropdown-menu.open { display: block; }
+  .dropdown-menu button {
+    display: block;
+    width: 100%;
+    padding: 9px 16px;
+    text-align: left;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 0.875rem;
+    color: var(--text);
+    white-space: nowrap;
+  }
+  .dropdown-menu button:hover { background: var(--bg); }
+  .dropdown-menu hr { margin: 4px 0; border: none; border-top: 1px solid var(--border); }
+  .dropdown-menu .danger-item { color: var(--danger); }
+
+  .upload-area {
+    background: var(--card-bg);
+    border: 2px dashed var(--border);
+    border-radius: 8px;
+    padding: 32px;
+    text-align: center;
+    margin-bottom: 20px;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+  }
+
+  .upload-area:hover, .upload-area.dragover {
+    border-color: var(--primary);
+    background: #eff6ff;
+  }
+
+  .upload-area h3 { margin-bottom: 8px; }
+  .upload-area p { color: var(--text-muted); font-size: 0.875rem; }
+  .upload-area .upload-buttons { margin-top: 16px; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+
+  .note-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 12px;
+    transition: box-shadow 0.15s;
+  }
+
+  .note-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+  .note-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .note-version { font-size: 1.125rem; font-weight: 700; color: var(--primary); }
+
+  .note-date { font-size: 0.875rem; color: var(--text-muted); white-space: nowrap; }
+
+  .note-category {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    background: var(--tag-bg);
+    color: var(--tag-text);
+    margin-right: 6px;
+    margin-bottom: 4px;
+  }
+
+  .note-section-num {
+    display: inline-block;
+    background: var(--primary);
+    color: white;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    text-align: center;
+    line-height: 28px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    margin-right: 8px;
+  }
+
+  .note-body { font-size: 0.9rem; line-height: 1.7; }
+  .note-body ul { margin-left: 20px; margin-top: 8px; }
+  .note-body li { margin-bottom: 4px; }
+  .note-body img { max-width: 100%; height: auto; border-radius: 8px; margin: 10px 0; border: 1px solid var(--border); cursor: pointer; transition: transform 0.15s, box-shadow 0.15s; }
+  .note-body img:hover { transform: scale(1.02); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+  .note-body table { border-collapse: collapse; width: 100%; margin: 10px 0; }
+  .note-body table td, .note-body table th { border: 1px solid var(--border); padding: 6px 10px; font-size: 0.85rem; }
+  .note-body table tr:nth-child(even) { background: #f8fafc; }
+  .note-body .alert { padding: 10px 14px; border-radius: 6px; margin: 10px 0; font-size: 0.85rem; }
+  .note-body .alert-info { background: #e0f2fe; border-left: 4px solid #0284c7; }
+  .note-body .alert-danger { background: #fee2e2; border-left: 4px solid #dc2626; }
+  .note-body .alert-warning { background: #fef3c7; border-left: 4px solid #f59e0b; }
+  .note-body h4, .note-body h5 { margin-top: 14px; margin-bottom: 6px; }
+
+  .note-body-collapsed { max-height: 300px; overflow: hidden; position: relative; }
+  .note-body-collapsed::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 80px;
+    background: linear-gradient(transparent, var(--card-bg));
+  }
+
+  .note-expand-btn {
+    display: block;
+    width: 100%;
+    text-align: center;
+    padding: 6px;
+    border: none;
+    background: none;
+    color: var(--primary);
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 0.85rem;
+  }
+
+  .note-expand-btn:hover { text-decoration: underline; }
+
+  .note-actions {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 8px;
+  }
+
+  .note-actions .btn { font-size: 0.75rem; padding: 4px 10px; }
+
+  mark { background: var(--highlight); padding: 1px 2px; border-radius: 2px; }
+
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .modal-overlay.active { display: flex; }
+
+  .modal {
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 24px;
+    max-width: 700px;
+    width: 90%;
+    max-height: 85vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  }
+
+  .modal h2 { margin-bottom: 16px; }
+  .modal .form-group { margin-bottom: 14px; }
+  .modal .form-group label { display: block; font-weight: 600; margin-bottom: 4px; font-size: 0.875rem; }
+  .modal .form-group input, .modal .form-group textarea, .modal .form-group select {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 0.875rem;
+    font-family: inherit;
+  }
+  .modal .form-group textarea { min-height: 120px; resize: vertical; }
+  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
+
+  .empty-state { text-align: center; padding: 60px 20px; color: var(--text-muted); }
+  .empty-state h3 { margin-bottom: 8px; color: var(--text); }
+
+  .parsed-entries { max-height: 400px; overflow-y: auto; margin: 12px 0; }
+  .parsed-entry { border: 1px solid var(--border); border-radius: 6px; padding: 10px; margin-bottom: 8px; background: white; }
+  .parsed-entry-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 4px; }
+  .parsed-entry h4 { color: var(--primary); margin-bottom: 4px; }
+  .parsed-entry .meta { font-size: 0.8rem; color: var(--text-muted); }
+  .parsed-entry .preview-img { max-width: 120px; max-height: 80px; border-radius: 4px; margin-top: 4px; }
+  .parsed-entry-remove {
+    border: 1px solid #fecaca;
+    background: #fff1f2;
+    color: #b91c1c;
+    border-radius: 4px;
+    padding: 2px 8px;
+    font-size: 0.75rem;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .parsed-entry-remove:hover { background: #ffe4e6; }
+
+  .parse-preview { max-height: 400px; overflow-y: auto; border: 1px solid var(--border); border-radius: 6px; padding: 12px; margin: 12px 0; font-size: 0.8rem; background: #f1f5f9; font-family: 'Consolas', 'Monaco', monospace; white-space: pre-wrap; word-break: break-word; }
+
+  .import-summary {
+    background: #f1f5f9;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin-bottom: 16px;
+  }
+  .import-summary-title {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 10px;
+  }
+  .import-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 10px;
+  }
+  .import-summary-grid .fg { display: flex; flex-direction: column; gap: 3px; }
+  .import-summary-grid .fg label { font-size: 0.72rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+  .import-summary-grid .fg input,
+  .import-summary-grid .fg select {
+    padding: 6px 10px;
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    font-size: 0.85rem;
+    background: white;
+  }
+  .import-summary-note { font-size: 0.78rem; color: var(--text-muted); margin-top: 8px; }
+
+  .pagination { display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 20px; padding: 16px; }
+  .results-info { font-size: 0.875rem; color: var(--text-muted); margin-bottom: 12px; }
+
+  .undo-bar {
+    display: none;
+    margin: 10px 0 14px;
+    padding: 10px 12px;
+    border: 1px solid #fde68a;
+    background: #fffbeb;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    color: #78350f;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .undo-bar-actions { display: flex; gap: 8px; }
+
+  .tab-bar { display: flex; gap: 4px; margin-bottom: 16px; border-bottom: 2px solid var(--border); }
+  .tab { padding: 8px 16px; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; color: var(--text-muted); font-weight: 500; font-size: 0.875rem; }
+  .tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+  .tab:hover { color: var(--text); }
+
+  #importStatus { margin-top: 12px; padding: 10px; border-radius: 6px; display: none; font-size: 0.875rem; }
+  #importStatus.success { display: block; background: #dcfce7; color: #166534; }
+  #importStatus.error { display: block; background: #fee2e2; color: #991b1b; }
+  #importStatus.info { display: block; background: #e0e7ff; color: #3730a3; }
+
+  .image-viewer-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.9);
+    z-index: 2000;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+  }
+
+  .image-viewer-overlay.active { display: flex; }
+
+  .image-viewer-container {
+    position: relative;
+    max-width: 90vw;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .image-viewer-img {
+    max-width: 100%;
+    max-height: 85vh;
+    border-radius: 8px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  }
+
+  .image-viewer-close {
+    position: absolute;
+    top: -40px;
+    right: 0;
+    width: 40px;
+    height: 40px;
+    background: rgba(255,255,255,0.2);
+    border: 2px solid white;
+    border-radius: 50%;
+    color: white;
+    font-size: 24px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s;
+    font-family: Arial, sans-serif;
+    line-height: 1;
+    padding: 0;
+  }
+
+  .image-viewer-close:hover { background: rgba(255,255,255,0.35); }
+
+  .image-viewer-nav {
+    position: absolute;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    pointer-events: none;
+  }
+
+  .image-viewer-nav button {
+    pointer-events: auto;
+    background: rgba(255,255,255,0.2);
+    border: 2px solid white;
+    color: white;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s;
+    margin: 0 10px;
+  }
+
+  .image-viewer-nav button:hover { background: rgba(255,255,255,0.35); }
+  .image-viewer-nav button:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  .image-viewer-info {
+    position: absolute;
+    bottom: -40px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    color: white;
+    font-size: 0.875rem;
+  }
+
+  .progress-bar-container { width: 100%; background: var(--border); border-radius: 4px; margin: 12px 0; height: 6px; }
+  .progress-bar { height: 100%; background: var(--primary); border-radius: 4px; transition: width 0.3s; }
+
+  @media (max-width: 768px) {
+    #searchInput { min-width: 100%; }
+    .toolbar { flex-direction: column; }
+    .actions { margin-left: 0; width: 100%; }
+    .note-header { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="container">
+    <div>
+      <h1>TeamDynamix Release Notes</h1>
+      <div class="stats" id="statsBar">No release notes loaded</div>
+    </div>
+    <div class="header-right">
+      <button class="btn-header" onclick="refreshSharedData()" id="refreshBtn" title="Re-fetch the hosted release-notes.json">&#8635; Refresh</button>
+      <div class="dropdown" id="optionsDropdown">
+        <button class="btn-header" onclick="toggleOptionsMenu()">Options &#9662;</button>
+        <div class="dropdown-menu" id="optionsMenu">
+          <button onclick="addManualEntry(); closeOptionsMenu()">+ Add Entry</button>
+          <button onclick="exportJSON(); closeOptionsMenu()">Export JSON</button>
+          <button onclick="document.getElementById('importJSONInput').click(); closeOptionsMenu()">Import JSON</button>
+          <hr>
+          <button class="danger-item" onclick="clearAllData(); closeOptionsMenu()">Clear All Data</button>
+        </div>
+      </div>
+      <input type="file" id="importJSONInput" accept=".json" style="display:none">
+    </div>
+  </div>
+</header>
+
+<div class="container">
+  <!-- Upload Area -->
+  <div class="upload-area" id="uploadArea">
+    <h3>Import Release Notes</h3>
+    <p>Import saved TeamDynamix release notes (HTML with images, or PDF).<br>
+    <strong>Step 1:</strong> Save the release notes page from TeamDynamix as "Webpage, Complete" (Ctrl+S).<br>
+    <strong>Step 2:</strong> Use "Import HTML Folder" below to select the saved folder (includes images).</p>
+    <div class="upload-buttons">
+      <button class="btn btn-primary" onclick="pickFolder()">Import HTML Folder</button>
+      <input type="file" id="folderInput" webkitdirectory style="display:none">
+    </div>
+  </div>
+
+  <!-- Toolbar -->
+  <div class="toolbar">
+    <div class="field">
+      <label for="searchInput">Search</label>
+      <input type="text" id="searchInput" placeholder="Search all release notes...">
+    </div>
+    <div class="field">
+      <label for="productFilter">Product</label>
+      <select id="productFilter">
+        <option value="">All Products</option>
+        <option value="Conversational AI">Conversational AI</option>
+        <option value="Work Management">Work Management</option>
+        <option value="AI Service Assist">AI Service Assist</option>
+        <option value="iPaaS">iPaaS</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="versionFilter">Version</label>
+      <select id="versionFilter"><option value="">All Versions</option></select>
+    </div>
+    <div class="field">
+      <label for="categoryFilter">Category</label>
+      <select id="categoryFilter"><option value="">All Categories</option></select>
+    </div>
+    <div class="field">
+      <label for="sortSelect">Sort By</label>
+      <select id="sortSelect">
+        <option value="date-desc" selected>Date (Newest First)</option>
+        <option value="date-asc">Date (Oldest First)</option>
+        <option value="version-desc">Version (Highest)</option>
+        <option value="version-asc">Version (Lowest)</option>
+        <option value="category">Category</option>
+      </select>
+    </div>
+
+  </div>
+
+  <div class="undo-bar" id="undoBar">
+    <span id="undoText"></span>
+    <div class="undo-bar-actions">
+      <button class="btn btn-outline" onclick="undoDelete()">Undo</button>
+      <button class="btn btn-outline" onclick="dismissUndo()">Dismiss</button>
+    </div>
+  </div>
+
+  <div class="results-info" id="resultsInfo"></div>
+  <div id="notesContainer"></div>
+  <div class="pagination" id="pagination"></div>
+</div>
+
+<!-- Parse Preview Modal -->
+<div class="modal-overlay" id="parseModal">
+  <div class="modal" style="max-width: 900px;">
+    <h2>Import Preview</h2>
+
+    <!-- Editable import summary -->
+    <div class="import-summary" id="importSummary">
+      <div class="import-summary-title">Detected Details &mdash; edit to override before importing</div>
+      <div class="import-summary-grid">
+        <div class="fg">
+          <label>Product</label>
+          <select id="importProduct">
+            <option value="Conversational AI">Conversational AI</option>
+            <option value="Work Management">Work Management</option>
+            <option value="AI Service Assist">AI Service Assist</option>
+            <option value="iPaaS">iPaaS</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label>Version</label>
+          <input type="text" id="importVersion" placeholder="e.g. 4.0">
+        </div>
+        <div class="fg">
+          <label>Release Name</label>
+          <input type="text" id="importRelease" placeholder="e.g. CAI 4.0 Release Notes">
+        </div>
+        <div class="fg">
+          <label>Release Date</label>
+          <input type="date" id="importDate">
+        </div>
+      </div>
+      <p class="import-summary-note">These values are applied to all entries in this import. Leave blank to keep per-entry auto-detected values, except when Version or Release Date is unknown.</p>
+    </div>
+
+    <div class="tab-bar">
+      <div class="tab active" data-tab="parsed" onclick="switchTab(this, 'parsed')">Parsed Entries (<span id="parsedCount">0</span>)</div>
+      <div class="tab" data-tab="raw" onclick="switchTab(this, 'raw')">Raw Text</div>
+    </div>
+    <div id="parsedTab">
+      <div class="parsed-entries" id="parsedEntries"></div>
+    </div>
+    <div id="rawTab" style="display:none;">
+      <div class="parse-preview" id="rawPreview"></div>
+    </div>
+    <div id="importStatus"></div>
+    <div class="progress-bar-container" id="progressContainer" style="display:none;">
+      <div class="progress-bar" id="progressBar" style="width:0%"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('parseModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="confirmImport()" id="confirmImportBtn">Import All</button>
+    </div>
+  </div>
+</div>
+
+<!-- Manual Entry Modal -->
+<div class="modal-overlay" id="entryModal">
+  <div class="modal">
+    <h2 id="entryModalTitle">Add Release Note Entry</h2>
+    <div class="form-group">
+      <label for="entryProduct">Product</label>
+      <select id="entryProduct">
+        <option value="Conversational AI">Conversational AI</option>
+        <option value="Work Management">Work Management</option>
+        <option value="AI Service Assist">AI Service Assist</option>
+        <option value="iPaaS">iPaaS</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="entryRelease">Release Name</label>
+      <input type="text" id="entryRelease" placeholder="e.g., CAI 4.0, 12.1 Release Notes">
+    </div>
+    <div class="form-group">
+      <label for="entryVersion">Version</label>
+      <input type="text" id="entryVersion" placeholder="e.g., 4.0, 4.0.1">
+    </div>
+    <div class="form-group">
+      <label for="entryDate">Release Date</label>
+      <input type="date" id="entryDate">
+    </div>
+    <div class="form-group">
+      <label for="entrySectionNum">Section Number</label>
+      <input type="number" id="entrySectionNum" placeholder="e.g., 1, 2, 3" min="1">
+    </div>
+    <div class="form-group">
+      <label for="entryCategory">Category</label>
+      <select id="entryCategory">
+        <option value="General">General</option>
+        <option value="New Feature">New Feature</option>
+        <option value="Improvement">Improvement</option>
+        <option value="Enhancement">Enhancement</option>
+        <option value="Bug Fix">Bug Fix</option>
+        <option value="Breaking Change">Breaking Change</option>
+        <option value="Administration">Administration</option>
+        <option value="API">API</option>
+        <option value="Connector">Connector</option>
+        <option value="UI/UX">UI/UX</option>
+        <option value="Performance">Performance</option>
+        <option value="Security">Security</option>
+        <option value="Other">Other</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="entryTitle">Title / Summary</label>
+      <input type="text" id="entryTitle" placeholder="Brief summary of this change">
+    </div>
+    <div class="form-group">
+      <label for="entryBody">Details (HTML supported)</label>
+      <textarea id="entryBody" placeholder="Full description..."></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('entryModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveEntry()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Image Viewer -->
+<div class="image-viewer-overlay" id="imageViewer">
+  <div class="image-viewer-container">
+    <button class="image-viewer-close" onclick="closeImageViewer()">×</button>
+    <div class="image-viewer-nav">
+      <button id="imagePrevBtn" onclick="prevImage()" title="Previous image">‹</button>
+      <button id="imageNextBtn" onclick="nextImage()" title="Next image">›</button>
+    </div>
+    <img id="viewerImage" class="image-viewer-img" alt="Full size preview">
+    <div class="image-viewer-info" id="imageInfo"></div>
+  </div>
+</div>
+
+<script>
+// ========== STATE ==========
+let allNotes = [];
+let filteredNotes = [];
+let pendingImport = [];
+let editingId = null;
+let lastDeleteAction = null;
+const ITEMS_PER_PAGE = 25;
+let currentPage = 1;
+const SHARED_DATA_URL = './release-notes.json';
+let dataSource = 'none'; // 'shared' | 'local' | 'none'
+
+// ========== INIT ==========
+document.addEventListener('DOMContentLoaded', async () => {
+  await loadInitialData();
+  bindEvents();
+  render();
+});
+
+function bindEvents() {
+  document.getElementById('searchInput').addEventListener('input', debounce(render, 200));
+  document.getElementById('productFilter').addEventListener('change', () => { currentPage = 1; render(); });
+  document.getElementById('versionFilter').addEventListener('change', () => { currentPage = 1; render(); });
+  document.getElementById('categoryFilter').addEventListener('change', () => { currentPage = 1; render(); });
+  document.getElementById('sortSelect').addEventListener('change', render);
+  document.getElementById('folderInput').addEventListener('change', handleFolderUpload);
+  document.getElementById('importJSONInput').addEventListener('change', handleJSONImport);
+
+  // Drag and drop
+  const upload = document.getElementById('uploadArea');
+  upload.addEventListener('dragover', e => { e.preventDefault(); upload.classList.add('dragover'); });
+  upload.addEventListener('dragleave', () => upload.classList.remove('dragover'));
+  upload.addEventListener('drop', handleDrop);
+}
+
+function pickFolder() {
+  document.getElementById('folderInput').click();
+}
+
+// ========== STORAGE ==========
+function loadFromLocalStorage() {
+  try {
+    const data = localStorage.getItem('tdx-release-notes');
+    if (data) {
+      const parsed = JSON.parse(data);
+      if (Array.isArray(parsed)) {
+        allNotes = parsed;
+        dataSource = 'local';
+        return true;
+      }
+    }
+  } catch (e) {
+    console.error('Failed to load local data:', e);
+  }
+  return false;
+}
+
+async function loadInitialData() {
+  const loadedShared = await loadFromSharedJson();
+  if (!loadedShared) {
+    const loadedLocal = loadFromLocalStorage();
+    if (!loadedLocal) dataSource = 'none';
+  }
+}
+
+async function loadFromSharedJson() {
+  try {
+    const url = `${SHARED_DATA_URL}?v=${Date.now()}`;
+    const res = await fetch(url, { cache: 'no-store' });
+    if (!res.ok) return false;
+
+    const payload = await res.json();
+    const notes = Array.isArray(payload) ? payload : payload.notes;
+    if (!Array.isArray(notes)) return false;
+
+    allNotes = notes
+      .filter(n => n && (n.title || n.bodyText || n.bodyHtml || n.version))
+      .map(n => ({ ...n, id: n.id || generateId() }));
+
+    dataSource = 'shared';
+    return true;
+  } catch (e) {
+    console.warn('Shared JSON not available, using local fallback.', e);
+    return false;
+  }
+}
+
+function saveToLocalStorage() {
+  try {
+    localStorage.setItem('tdx-release-notes', JSON.stringify(allNotes));
+  } catch (e) {
+    // localStorage might be full with embedded images - warn user
+    console.error('Failed to save:', e);
+    alert('Storage limit reached. Use "Export JSON" to save your data to a file, then use "Clear All" and "Import JSON" to reload.');
+  }
+}
+
+// ========== FILE HANDLING ==========
+async function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('uploadArea').classList.remove('dragover');
+
+  // Check for folder drop via DataTransferItemList
+  const items = e.dataTransfer.items;
+  if (items) {
+    const fileMap = new Map();
+    const promises = [];
+    for (const item of items) {
+      const entry = item.webkitGetAsEntry ? item.webkitGetAsEntry() : null;
+      if (entry) {
+        promises.push(traverseEntry(entry, fileMap));
+      }
+    }
+    await Promise.all(promises);
+    if (fileMap.size > 0) {
+      await processFileMap(fileMap);
+      return;
+    }
+  }
+
+  // Fallback to regular file drop
+  if (e.dataTransfer.files.length > 0) {
+    await handleSingleFiles(e.dataTransfer.files);
+  }
+}
+
+async function traverseEntry(entry, fileMap) {
+  if (entry.isFile) {
+    const file = await new Promise(resolve => entry.file(resolve));
+    fileMap.set(entry.fullPath, file);
+  } else if (entry.isDirectory) {
+    const reader = entry.createReader();
+    const entries = await new Promise(resolve => reader.readEntries(resolve));
+    for (const child of entries) {
+      await traverseEntry(child, fileMap);
+    }
+  }
+}
+
+async function handleFolderUpload(e) {
+  const files = e.target.files;
+  if (!files.length) return;
+
+  const fileMap = new Map();
+  for (const file of files) {
+    fileMap.set('/' + file.webkitRelativePath, file);
+  }
+  await processFileMap(fileMap);
+  e.target.value = '';
+}
+
+async function handleSingleFiles(files) {
+  for (const file of files) {
+    const ext = file.name.split('.').pop().toLowerCase();
+    if (ext === 'pdf') {
+      const text = await extractPdfText(file);
+      const entries = parseReleaseNotesFromText(text, file.name);
+      pendingImport = entries;
+      document.getElementById('rawPreview').textContent = text.substring(0, 50000);
+    } else {
+      const html = await file.text();
+      const entries = parseTDXHtml(html, file.name, new Map());
+      pendingImport = entries;
+      document.getElementById('rawPreview').textContent = html.substring(0, 50000);
+    }
+    document.getElementById('parsedCount').textContent = pendingImport.length;
+    renderParsedEntries(pendingImport);
+    showModal('parseModal');
+  }
+}
+
+async function processFileMap(fileMap) {
+  // Find HTML file(s) and build image map
+  let htmlFile = null;
+  const imageFiles = new Map(); // filename -> base64 data URI
+
+  for (const [path, file] of fileMap) {
+    const name = file.name.toLowerCase();
+    if (name.endsWith('.html') || name.endsWith('.htm')) {
+      // Pick the main HTML file (not one inside _files)
+      if (!path.includes('_files/') && !path.includes('_files\\')) {
+        htmlFile = file;
+      }
+    }
+  }
+
+  if (!htmlFile) {
+    alert('No HTML file found in the selected folder. Please select the folder containing the saved HTML file.');
+    return;
+  }
+
+  // Show progress
+  showModal('parseModal');
+  const status = document.getElementById('importStatus');
+  status.className = 'info';
+  status.textContent = 'Reading images...';
+  status.style.display = 'block';
+  document.getElementById('progressContainer').style.display = 'block';
+
+  // Convert images to base64 data URIs
+  const imageEntries = [...fileMap.entries()].filter(([path]) => {
+    const lower = path.toLowerCase();
+    return lower.includes('_files/') || lower.includes('_files\\');
+  });
+
+  let imgCount = 0;
+  for (const [path, file] of imageEntries) {
+    const fileName = file.name;
+    // Skip non-image files (css, js, etc.)
+    const ext = fileName.split('.').pop().toLowerCase();
+    const isLikelyImage = ['png','jpg','jpeg','gif','webp','svg','bmp'].includes(ext)
+      || fileName.startsWith('Viewer')
+      || (!fileName.includes('.') && file.size > 0 && file.type.startsWith('image'));
+
+    // For TDX files, the viewer images have no extension
+    if (isLikelyImage || !fileName.includes('.')) {
+      try {
+        const mime = file.type || 'image/png';
+        // Only process if likely an image (check file signature for extensionless files)
+        if (fileName.includes('.') || file.size > 100) {
+          const arrayBuf = await file.arrayBuffer();
+          const bytes = new Uint8Array(arrayBuf);
+          // Check for image magic bytes
+          const isImage = fileName.includes('.')
+            ? true
+            : (bytes[0] === 0x89 && bytes[1] === 0x50) // PNG
+            || (bytes[0] === 0xFF && bytes[1] === 0xD8) // JPEG
+            || (bytes[0] === 0x47 && bytes[1] === 0x49) // GIF
+            || (bytes[0] === 0x52 && bytes[1] === 0x49) // RIFF/WEBP
+            || (bytes[0] === 0x42 && bytes[1] === 0x4D); // BMP
+
+          if (isImage) {
+            const base64 = arrayBufferToBase64(arrayBuf);
+            const detectedMime = detectMimeFromBytes(bytes) || mime || 'image/png';
+            imageFiles.set(fileName, `data:${detectedMime};base64,${base64}`);
+          }
+        }
+      } catch (err) {
+        console.warn('Could not read image:', fileName, err);
+      }
+    }
+    imgCount++;
+    const pct = Math.round((imgCount / imageEntries.length) * 50);
+    document.getElementById('progressBar').style.width = pct + '%';
+  }
+
+  status.textContent = `Loaded ${imageFiles.size} images. Parsing HTML...`;
+  document.getElementById('progressBar').style.width = '60%';
+
+  // Parse HTML
+  const html = await htmlFile.text();
+  const entries = parseTDXHtml(html, htmlFile.name, imageFiles);
+
+  document.getElementById('progressBar').style.width = '100%';
+  status.textContent = `Found ${entries.length} sections with ${imageFiles.size} images.`;
+
+  pendingImport = entries;
+  document.getElementById('parsedCount').textContent = entries.length;
+  renderParsedEntries(entries);
+  document.getElementById('rawPreview').textContent = `File: ${htmlFile.name}\nImages found: ${imageFiles.size}\n\n` + html.substring(0, 30000);
+}
+
+function arrayBufferToBase64(buffer) {
+  const bytes = new Uint8Array(buffer);
+  let binary = '';
+  const chunkSize = 8192;
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    const chunk = bytes.subarray(i, i + chunkSize);
+    binary += String.fromCharCode(...chunk);
+  }
+  return btoa(binary);
+}
+
+function detectMimeFromBytes(bytes) {
+  if (bytes[0] === 0x89 && bytes[1] === 0x50) return 'image/png';
+  if (bytes[0] === 0xFF && bytes[1] === 0xD8) return 'image/jpeg';
+  if (bytes[0] === 0x47 && bytes[1] === 0x49) return 'image/gif';
+  if (bytes[0] === 0x52 && bytes[1] === 0x49) return 'image/webp';
+  if (bytes[0] === 0x42 && bytes[1] === 0x4D) return 'image/bmp';
+  return null;
+}
+
+async function extractPdfText(file) {
+  const arrayBuffer = await file.arrayBuffer();
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+  let fullText = '';
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const content = await page.getTextContent();
+    fullText += content.items.map(item => item.str).join(' ') + '\n\n';
+  }
+  return fullText;
+}
+
+// ========== TDX HTML PARSER ==========
+function parseTDXHtml(html, fileName, imageFiles) {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, 'text/html');
+
+  // --- Detect product ---
+  // Try <meta property="article:section"> first (full portal pages like WM)
+  const sectionMeta = doc.querySelector('meta[property="article:section"]');
+  let product = '';
+  if (sectionMeta) {
+    // Combine article:section + all article:tag values + og:title for reliable detection.
+    // TDX sometimes sets article:section to the wrong product (e.g. "iPaaS Release Notes"
+    // for an AI & Automation page), but og:title and article:tag are usually accurate.
+    const tagContent = [...doc.querySelectorAll('meta[property="article:tag"]')]
+      .map(m => m.getAttribute('content') || '').join(' ');
+    const ogTitle = doc.querySelector('meta[property="og:title"]')?.getAttribute('content') || '';
+    const s = ((sectionMeta.getAttribute('content') || '') + ' ' + tagContent + ' ' + ogTitle).toLowerCase();
+    if (s.includes('work management')) product = 'Work Management';
+    else if (s.includes('conversational ai') || s.includes('cai') || s.includes('ai & automation') || s.includes('ai and automation') || s.includes('ai-and-automation')) product = 'Conversational AI';
+    else if (s.includes('ai service assist') || s.includes('service assist')) product = 'AI Service Assist';
+    else if (s.includes('ipaas') || s.includes('integration platform')) product = 'iPaaS';
+    else product = sectionMeta.getAttribute('content').replace(/\s*release\s*notes/i, '').trim();
+  }
+  if (!product) {
+    // Fallback: infer from filename / title
+    const src = (fileName + ' ' + (doc.querySelector('title')?.textContent || '')).toLowerCase();
+    if (src.includes('work management') || /^article.*12\./.test(fileName.toLowerCase())) product = 'Work Management';
+    else if (src.includes('cai') || src.includes('conversational ai') || src.includes('ai & automation') || src.includes('ai and automation')) product = 'Conversational AI';
+    else if (src.includes('ai service assist') || src.includes('service assist')) product = 'AI Service Assist';
+    else if (src.includes('ipaas') || src.includes('integration platform')) product = 'iPaaS';
+    else product = 'Conversational AI'; // safest default for existing saved files
+  }
+
+  // --- Release name & version ---
+  const h1El = doc.querySelector('h1');
+  const h1Text = h1El ? h1El.textContent.trim().replace(/\s+/g, ' ') : '';
+  const pageTitle = (doc.querySelector('title')?.textContent || '').trim()
+    .replace(/^Article\s*-\s*/i, '').replace(/^\s*$/, '');
+  const rawName = h1Text || pageTitle || fileName.replace(/\.html?$/i, '');
+
+  // Build a clean release name: "12.1 Release Notes" → keep as-is
+  const releaseName = rawName;
+  const versionMatch = rawName.match(/([\d]+(?:\.[\d]+)+)/);
+  const version = versionMatch ? versionMatch[1] : 'Unknown';
+
+  // --- Extract release date ---
+  // Try multiple patterns across the full page text
+  let releaseDate = '';
+  const bodyText = doc.body.textContent;
+  const datePatterns = [
+    /(?:was\s+released\s+on)\s+([A-Za-z]+\s+\d{1,2}(?:st|nd|rd|th)?,?\s+\d{4})/i,
+    /Release\s*Date\s*:\s*([A-Za-z]+\s+\d{1,2}(?:st|nd|rd|th)?,?\s+\d{4})/i,
+    /(?:released|launching|available)\s+(?:on\s+)?([A-Za-z]+\s+\d{1,2}(?:th|st|nd|rd)?,?\s+\d{4})/i,
+  ];
+  for (const pat of datePatterns) {
+    const m = bodyText.match(pat);
+    if (m) { releaseDate = normalizeDate(m[1].replace(/(st|nd|rd|th)/gi, '')); break; }
+  }
+
+  // --- Locate main content div ---
+  // WM full portal page uses a long ASP.NET ID; CAI print article uses #divBody
+  const isFullPortal = !!doc.querySelector('#ctl00_ctl00_cpContent_cpContent_divBody');
+  const contentDiv = doc.querySelector('#ctl00_ctl00_cpContent_cpContent_divBody')
+    || doc.querySelector('#divBody')
+    || doc.querySelector('.ckeShim')
+    || doc.body;
+
+  // Remove navigation chrome, scripts, etc. from content area
+  contentDiv.querySelectorAll('script, style, .no-print, .button-nav-top, nav, header, footer').forEach(el => el.remove());
+
+  const baseEntry = { release: releaseName, version, date: releaseDate, product, source: 'html-import', sourceFile: fileName, importedAt: new Date().toISOString() };
+
+  if (isFullPortal) {
+    // Full portal pages vary: some use h2+h3 (WM), others use only numbered h2 (iPaaS).
+    const hasH3 = contentDiv.querySelectorAll('h3').length > 0;
+    return hasH3
+      ? parseAtH3Level(contentDiv, baseEntry, imageFiles)
+      : parseAtH2Level(contentDiv, baseEntry, imageFiles);
+  }
+
+  // Print pages are generally numbered h2 sections.
+  return parseAtH2Level(contentDiv, baseEntry, imageFiles);
+}
+
+function parseAtH2Level(contentDiv, baseEntry, imageFiles) {
+  const entries = [];
+  const h2Elements = contentDiv.querySelectorAll('h2');
+
+  const skipTitles = /^(Summary|Body|Details|Table of Contents|Contents)$/i;
+
+  for (let i = 0; i < h2Elements.length; i++) {
+    const h2 = h2Elements[i];
+    const sectionTitle = h2.textContent.trim().replace(/\s+/g, ' ');
+    if (skipTitles.test(sectionTitle)) continue;
+
+    const numMatch = sectionTitle.match(/^(\d+)\.\s*/);
+    const sectionNum = numMatch ? parseInt(numMatch[1]) : null;
+    const cleanTitle = sectionTitle.replace(/^\d+\.\s*/, '');
+
+    let contentHtml = '';
+    let sibling = h2.nextElementSibling;
+    while (sibling && sibling.tagName !== 'H2') {
+      contentHtml += sibling.outerHTML || '';
+      sibling = sibling.nextElementSibling;
+    }
+
+    contentHtml = replaceImageSrcs(contentHtml, imageFiles);
+    contentHtml = cleanContentHtml(contentHtml);
+
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = contentHtml;
+
+    entries.push({
+      ...baseEntry,
+      id: generateId(),
+      sectionNum,
+      category: detectSectionCategory(cleanTitle),
+      title: cleanTitle,
+      bodyHtml: contentHtml,
+      bodyText: tempDiv.textContent || '',
+      hasDayOneImpact: contentHtml.toLowerCase().includes('day one impact'),
+    });
+  }
+  return entries;
+}
+
+function parseAtH3Level(contentDiv, baseEntry, imageFiles) {
+  const entries = [];
+  const skipH2 = /^(Contents|Table of Contents|Release Preview Environment|Database Changes|Additional Changes)$/i;
+
+  // Walk all direct children collecting h2 → h3 → content blocks
+  let currentH2Title = '';
+  let currentH2Num = null;
+  const elements = Array.from(contentDiv.querySelectorAll('h2, h3'));
+
+  for (let i = 0; i < elements.length; i++) {
+    const el = elements[i];
+    const tag = el.tagName;
+    const title = el.textContent.trim().replace(/\s+/g, ' ');
+
+    if (tag === 'H2') {
+      if (skipH2.test(title)) { currentH2Title = ''; continue; }
+      currentH2Title = title;
+      const numMatch = title.match(/^(\d+)\.\s*/);
+      currentH2Num = numMatch ? parseInt(numMatch[1]) : null;
+      continue;
+    }
+
+    // H3 — this is a feature entry
+    if (!currentH2Title) continue; // skip h3s under skipped h2s
+
+    // Collect all siblings until the next h3 or h2
+    let contentHtml = '';
+    let sibling = el.nextElementSibling;
+    while (sibling && sibling.tagName !== 'H3' && sibling.tagName !== 'H2') {
+      contentHtml += sibling.outerHTML || '';
+      sibling = sibling.nextElementSibling;
+    }
+
+    contentHtml = replaceImageSrcs(contentHtml, imageFiles);
+    contentHtml = cleanContentHtml(contentHtml);
+
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = contentHtml;
+
+    entries.push({
+      ...baseEntry,
+      id: generateId(),
+      sectionNum: currentH2Num,
+      category: detectSectionCategory(currentH2Title),
+      parentSection: currentH2Title,
+      title: title,
+      bodyHtml: contentHtml,
+      bodyText: tempDiv.textContent || '',
+      hasDayOneImpact: contentHtml.toLowerCase().includes('day 1 impact') || contentHtml.toLowerCase().includes('day one impact'),
+    });
+  }
+  return entries;
+}
+
+function replaceImageSrcs(html, imageFiles) {
+  if (!imageFiles || imageFiles.size === 0) return html;
+
+  // Match src attributes pointing to _files folder
+  // Patterns: ./Name_files/Viewer, ./Name_files/Viewer(1), etc.
+  return html.replace(/src="([^"]*?)"/gi, (match, src) => {
+    // Extract just the filename from the path
+    const parts = src.split('/');
+    const fileName = parts[parts.length - 1];
+
+    // Try exact match
+    if (imageFiles.has(fileName)) {
+      return `src="${imageFiles.get(fileName)}"`;
+    }
+
+    // Try URL-decoded
+    try {
+      const decoded = decodeURIComponent(fileName);
+      if (imageFiles.has(decoded)) {
+        return `src="${imageFiles.get(decoded)}"`;
+      }
+    } catch (e) {}
+
+    return match;
+  });
+}
+
+function cleanContentHtml(html) {
+  // Remove empty spans with just background color
+  html = html.replace(/<span[^>]*style="[^"]*background-color[^"]*"[^>]*>\s*<\/span>/gi, '');
+
+  // Clean up excessive whitespace
+  html = html.replace(/&nbsp;/g, ' ');
+
+  // Remove empty paragraphs
+  html = html.replace(/<p>\s*<\/p>/gi, '');
+
+  // Remove links to TDX portal (they won't work without auth)
+  // But keep the link text
+  html = html.replace(/<a\s+href="https?:\/\/solutions\.teamdynamix\.com[^"]*"[^>]*>(.*?)<\/a>/gi, '$1');
+
+  // Keep external links (zoom recordings etc.)
+  // Already handled - they remain as-is
+
+  return html;
+}
+
+function detectSectionCategory(title) {
+  const t = title.toLowerCase();
+  if (t.includes('day 1') || t.includes('day one')) return 'Day 1 Impact';
+  if (t.includes('deprecated') || t.includes('deprecat')) return 'Deprecated';
+  if (t.includes('resolved bug') || t.includes('bug fix') || t.includes('defect')) return 'Bug Fix';
+  if (t.includes('api')) return 'API';
+  if (t.includes('connector')) return 'Connector';
+  if (t.includes('security') || t.includes('saml')) return 'Security';
+  if (t.includes('administration') || t.includes('performance') || t.includes('admin')) return 'Administration';
+  if (t.includes('quality of life') || t.includes('ui improvement')) return 'UI/UX';
+  if (t.includes('general enhance') || t.includes('general improvement')) return 'Enhancement';
+  if (t.includes('service') || t.includes('asset') || t.includes('itsm')) return 'Enhancement';
+  if (t.includes('project') || t.includes('ppm')) return 'Enhancement';
+  if (t.includes('training') || t.includes('knowledge')) return 'Enhancement';
+  if (t.includes('live chat') || t.includes('supervisor')) return 'Enhancement';
+  if (t.includes('form') || t.includes('dynamic form')) return 'Enhancement';
+  if (t.includes('task') || t.includes('sub task')) return 'Enhancement';
+  if (t.includes('dashboard') || t.includes('reporting') || t.includes('report')) return 'Enhancement';
+  return 'Enhancement';
+}
+
+function parseReleaseNotesFromText(text, fileName) {
+  // Fallback for PDF parsing - simpler text-based approach
+  const releaseName = fileName.replace(/\.pdf$/i, '').replace(/\.html?$/i, '');
+  const versionMatch = releaseName.match(/([\d]+(?:\.[\d]+)*)/);
+  const version = versionMatch ? versionMatch[1] : 'Unknown';
+
+  // Detect product from filename
+  const src = (fileName + ' ' + releaseName).toLowerCase();
+  let product = 'Conversational AI'; // default
+  if (src.includes('work management')) product = 'Work Management';
+  else if (src.includes('cai') || src.includes('conversational ai') || src.includes('ai & automation') || src.includes('ai and automation')) product = 'Conversational AI';
+  else if (src.includes('ai service assist') || src.includes('service assist')) product = 'AI Service Assist';
+  else if (src.includes('ipaas') || src.includes('integration platform')) product = 'iPaaS';
+
+  const dateMatch = text.match(/Release\s*Date:\s*([A-Za-z]+\s+\d{1,2}(?:st|nd|rd|th)?,?\s+\d{4})/i);
+  const releaseDate = dateMatch ? normalizeDate(dateMatch[1].replace(/(st|nd|rd|th)/i, '')) : '';
+
+  // Split on numbered sections
+  const sections = text.split(/(?=\d+\.\s+[A-Z])/);
+  const entries = [];
+
+  for (const section of sections) {
+    const trimmed = section.trim();
+    if (trimmed.length < 20) continue;
+
+    const numMatch = trimmed.match(/^(\d+)\.\s+(.+?)(?:\n|$)/);
+    if (!numMatch) continue;
+
+    entries.push({
+      id: generateId(),
+      product: product,
+      release: releaseName,
+      version: version,
+      date: releaseDate,
+      sectionNum: parseInt(numMatch[1]),
+      category: detectSectionCategory(numMatch[2]),
+      title: numMatch[2].trim(),
+      bodyHtml: '',
+      bodyText: trimmed,
+      hasDayOneImpact: /day\s*one\s*impact/i.test(trimmed),
+      source: 'pdf-import',
+      sourceFile: fileName,
+      importedAt: new Date().toISOString()
+    });
+  }
+
+  if (entries.length === 0) {
+    entries.push({
+      id: generateId(),
+      product: product,
+      release: releaseName,
+      version: version,
+      date: releaseDate,
+      sectionNum: null,
+      category: 'General',
+      title: releaseName,
+      bodyHtml: '',
+      bodyText: text.substring(0, 50000),
+      hasDayOneImpact: false,
+      source: 'pdf-import',
+      sourceFile: fileName,
+      importedAt: new Date().toISOString()
+    });
+  }
+
+  return entries;
+}
+
+function normalizeDate(dateStr) {
+  try {
+    const d = new Date(dateStr);
+    if (!isNaN(d.getTime())) return d.toISOString().split('T')[0];
+  } catch (e) {}
+  return dateStr;
+}
+
+// ========== RENDER ==========
+function render() {
+  const activeNotes = allNotes.filter(note => !note.deletedAt);
+  const query = document.getElementById('searchInput').value.toLowerCase().trim();
+  const productFilter = document.getElementById('productFilter').value;
+  const versionFilter = document.getElementById('versionFilter').value;
+  const categoryFilter = document.getElementById('categoryFilter').value;
+  const sortBy = document.getElementById('sortSelect').value;
+
+  filteredNotes = activeNotes.filter(note => {
+    if (productFilter && note.product !== productFilter) return false;
+    if (versionFilter && note.version !== versionFilter) return false;
+    if (categoryFilter && note.category !== categoryFilter) return false;
+    if (query) {
+      const searchable = [note.title, note.bodyText, note.version, note.category, note.release, note.date]
+        .filter(Boolean).join(' ').toLowerCase();
+      const terms = query.split(/\s+/);
+      return terms.every(term => searchable.includes(term));
+    }
+    return true;
+  });
+
+  filteredNotes.sort((a, b) => {
+    switch (sortBy) {
+      case 'date-desc': {
+        // Primary: date descending, secondary: within same release keep section order
+        const dateCmp = (b.date || '').localeCompare(a.date || '');
+        if (dateCmp !== 0) return dateCmp;
+        return (a.sectionNum || 99) - (b.sectionNum || 99);
+      }
+      case 'date-asc': {
+        const dateCmp = (a.date || '').localeCompare(b.date || '');
+        if (dateCmp !== 0) return dateCmp;
+        return (a.sectionNum || 99) - (b.sectionNum || 99);
+      }
+      case 'version-desc': return compareVersions(b.version, a.version);
+      case 'version-asc': return compareVersions(a.version, b.version);
+      case 'category': return (a.category || '').localeCompare(b.category || '');
+      case 'section-asc': {
+        const relCmp = (a.release || '').localeCompare(b.release || '');
+        if (relCmp !== 0) return relCmp;
+        return (a.sectionNum || 99) - (b.sectionNum || 99);
+      }
+      default: return 0;
+    }
+  });
+
+  const totalPages = Math.ceil(filteredNotes.length / ITEMS_PER_PAGE);
+  if (currentPage > totalPages) currentPage = Math.max(1, totalPages);
+  const start = (currentPage - 1) * ITEMS_PER_PAGE;
+  const pageNotes = filteredNotes.slice(start, start + ITEMS_PER_PAGE);
+
+  const container = document.getElementById('notesContainer');
+  if (pageNotes.length === 0) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <h3>${activeNotes.length === 0 ? 'No Release Notes Yet' : 'No Matching Results'}</h3>
+        <p>${activeNotes.length === 0
+          ? 'Import a saved TeamDynamix release notes page using the area above.'
+          : 'Try adjusting your search or filters.'}</p>
+      </div>`;
+  } else {
+    container.innerHTML = pageNotes.map(note => renderNoteCard(note, query)).join('');
+  }
+
+  renderPagination(totalPages);
+  updateFilterOptions();
+  updateUndoBar();
+
+  const releases = new Set(activeNotes.map(n => n.release).filter(Boolean));
+  const products = new Set(activeNotes.map(n => n.product).filter(Boolean));
+  const sourceLabel =
+    dataSource === 'shared' ? 'Shared JSON' :
+    dataSource === 'local' ? 'Local browser' :
+    'No data source';
+
+  document.getElementById('statsBar').textContent =
+    `${activeNotes.length} entries | ${releases.size} release(s) | ${[...products].join(', ') || 'No products'} | Source: ${sourceLabel}`;
+
+  const info = document.getElementById('resultsInfo');
+  if (query || productFilter || versionFilter || categoryFilter) {
+    info.textContent = `Showing ${filteredNotes.length} of ${activeNotes.length} entries`;
+  } else {
+    info.textContent = '';
+  }
+
+  // Attach image click listeners
+  attachImageListeners();
+}
+
+function renderNoteCard(note, query) {
+  const cardId = 'card-' + note.id;
+  let bodyContent = '';
+
+  if (note.bodyHtml) {
+    bodyContent = note.bodyHtml;
+    if (query) {
+      // Highlight in text nodes only (not in HTML tags)
+      bodyContent = highlightHtml(bodyContent, query);
+    }
+  } else {
+    const text = query ? highlightText(escapeHtml(note.bodyText || ''), query) : escapeHtml(note.bodyText || '');
+    bodyContent = `<div style="white-space:pre-wrap;">${text}</div>`;
+  }
+
+  const titleDisplay = query ? highlightText(escapeHtml(note.title), query) : escapeHtml(note.title);
+
+  const productColors = {
+    'Conversational AI': '#6f42c1',
+    'Work Management':   '#0d6efd',
+    'AI Service Assist': '#0891b2',
+    'iPaaS':             '#059669',
+  };
+  const productColor = productColors[note.product] || '#64748b';
+
+  return `
+    <div class="note-card" data-id="${note.id}">
+      <div class="note-header">
+        <div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px;">
+          ${note.product ? `<span class="note-category" style="background:${productColor}1a;color:${productColor};border:1px solid ${productColor}33;">${escapeHtml(note.product)}</span>` : ''}
+          <span class="note-version">${escapeHtml(note.release || note.version || 'Unknown')}</span>
+          ${note.parentSection ? `<span class="note-category" style="background:#f1f5f9;color:#475569;">${escapeHtml(note.parentSection)}</span>` : ''}
+          <span class="note-category">${escapeHtml(note.category || 'General')}</span>
+          ${note.hasDayOneImpact ? '<span class="note-category" style="background:#fee2e2;color:#991b1b;">Day 1 Impact</span>' : ''}
+        </div>
+        <span class="note-date">${note.date ? formatDisplayDate(note.date) : 'No date'}</span>
+      </div>
+      <div class="note-body">
+        <h3 style="margin-bottom:10px;font-size:1.05rem;">${titleDisplay}</h3>
+        <div id="${cardId}-body" class="note-body-collapsed">
+          ${bodyContent}
+        </div>
+        <button class="note-expand-btn" id="${cardId}-btn" onclick="toggleExpand('${cardId}')">Show More</button>
+      </div>
+      <div class="note-actions">
+        <button class="btn btn-outline" onclick="editEntry('${note.id}')">Edit</button>
+        <button class="btn btn-outline" onclick="deleteEntry('${note.id}')">Delete</button>
+      </div>
+    </div>`;
+}
+
+function toggleExpand(cardId) {
+  const body = document.getElementById(cardId + '-body');
+  const btn = document.getElementById(cardId + '-btn');
+  if (body.classList.contains('note-body-collapsed')) {
+    body.classList.remove('note-body-collapsed');
+    btn.textContent = 'Show Less';
+  } else {
+    body.classList.add('note-body-collapsed');
+    btn.textContent = 'Show More';
+  }
+}
+
+function renderPagination(totalPages) {
+  const container = document.getElementById('pagination');
+  if (totalPages <= 1) { container.innerHTML = ''; return; }
+
+  let html = `<button class="btn btn-outline" ${currentPage <= 1 ? 'disabled' : ''} onclick="goToPage(${currentPage - 1})">&laquo; Prev</button>`;
+  const start = Math.max(1, currentPage - 2);
+  const end = Math.min(totalPages, currentPage + 2);
+
+  if (start > 1) html += `<button class="btn btn-outline" onclick="goToPage(1)">1</button>`;
+  if (start > 2) html += `<span>...</span>`;
+  for (let i = start; i <= end; i++) {
+    html += `<button class="btn ${i === currentPage ? 'btn-primary' : 'btn-outline'}" onclick="goToPage(${i})">${i}</button>`;
+  }
+  if (end < totalPages - 1) html += `<span>...</span>`;
+  if (end < totalPages) html += `<button class="btn btn-outline" onclick="goToPage(${totalPages})">${totalPages}</button>`;
+  html += `<button class="btn btn-outline" ${currentPage >= totalPages ? 'disabled' : ''} onclick="goToPage(${currentPage + 1})">Next &raquo;</button>`;
+
+  container.innerHTML = html;
+}
+
+function goToPage(page) {
+  currentPage = page;
+  render();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function updateFilterOptions() {
+  const currentP = document.getElementById('productFilter').value;
+  const activeNotes = allNotes.filter(n => !n.deletedAt);
+
+  // Versions scoped to currently selected product (or all if none selected)
+  const scopedNotes = currentP ? activeNotes.filter(n => n.product === currentP) : activeNotes;
+  const versions = [...new Set(scopedNotes.map(n => n.version).filter(Boolean))]
+    .sort(compareVersions).reverse();
+  const categories = [...new Set(scopedNotes.map(n => n.category).filter(Boolean))].sort();
+
+  // Version dropdown — reset if current selection no longer valid for this product
+  const vSelect = document.getElementById('versionFilter');
+  const currentV = versions.includes(vSelect.value) ? vSelect.value : '';
+  vSelect.innerHTML = '<option value="">All Versions</option>' +
+    versions.map(v => `<option value="${escapeHtml(v)}" ${v === currentV ? 'selected' : ''}>${escapeHtml(v)}</option>`).join('');
+  if (vSelect.value !== currentV) vSelect.value = currentV;
+
+  const cSelect = document.getElementById('categoryFilter');
+  const currentC = cSelect.value;
+  cSelect.innerHTML = '<option value="">All Categories</option>' +
+    categories.map(c => `<option value="${escapeHtml(c)}" ${c === currentC ? 'selected' : ''}>${escapeHtml(c)}</option>`).join('');
+}
+
+// ========== IMPORT PREVIEW ==========
+function populateImportHeader(entries) {
+  if (!entries.length) return;
+  const first = entries[0];
+  const productEl = document.getElementById('importProduct');
+  const versionEl = document.getElementById('importVersion');
+  const releaseEl = document.getElementById('importRelease');
+  const dateEl = document.getElementById('importDate');
+
+  const initialProduct = first.product || 'Conversational AI';
+  const initialVersion = first.version || '';
+  const initialRelease = first.release || '';
+  const initialDate = first.date || '';
+
+  productEl.value = initialProduct;
+  versionEl.value = initialVersion;
+  releaseEl.value = initialRelease;
+  dateEl.value = initialDate;
+
+  // Track initial values so confirmImport can tell what the user intentionally changed.
+  productEl.dataset.initialValue = initialProduct;
+  versionEl.dataset.initialValue = initialVersion;
+  releaseEl.dataset.initialValue = initialRelease;
+  dateEl.dataset.initialValue = initialDate;
+}
+
+function renderParsedEntries(entries) {
+  populateImportHeader(entries);
+  document.getElementById('parsedCount').textContent = entries.length;
+  document.getElementById('confirmImportBtn').disabled = entries.length === 0;
+  const container = document.getElementById('parsedEntries');
+  if (entries.length === 0) {
+    container.innerHTML = '<p style="color:var(--text-muted);padding:20px;text-align:center;">No sections found.</p>';
+    return;
+  }
+
+  container.innerHTML = entries.map(e => {
+    const imgCount = (e.bodyHtml || '').match(/<img /gi)?.length || 0;
+    return `
+      <div class="parsed-entry">
+        <div class="parsed-entry-head">
+          <h4>${e.sectionNum ? e.sectionNum + '. ' : ''}${escapeHtml(e.title)}</h4>
+          <button class="parsed-entry-remove" onclick="removePendingEntry('${e.id}')">Remove</button>
+        </div>
+        <div class="meta">
+          Product: <strong>${escapeHtml(e.product || '')}</strong> |
+          Release: ${escapeHtml(e.release || '')} |
+          Version: ${escapeHtml(e.version)} |
+          Date: ${e.date || 'Unknown'} |
+          Category: ${escapeHtml(e.category)}
+          ${e.parentSection ? `| Section: ${escapeHtml(e.parentSection)}` : ''}
+          ${imgCount > 0 ? `| <strong>${imgCount} image(s)</strong>` : ''}
+          ${e.hasDayOneImpact ? '| <strong style="color:#dc2626;">Day 1 Impact</strong>' : ''}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function removePendingEntry(entryId) {
+  pendingImport = pendingImport.filter(e => e.id !== entryId);
+  renderParsedEntries(pendingImport);
+}
+
+function isUnknownVersion(value) {
+  const v = (value || '').trim().toLowerCase();
+  return !v || v === 'unknown' || v === 'n/a' || v === 'na';
+}
+
+function isMissingOrInvalidDate(value) {
+  const v = (value || '').trim();
+  if (!v) return true;
+  const d = new Date(v);
+  return isNaN(d.getTime());
+}
+
+function confirmImport() {
+  if (pendingImport.length === 0) return;
+
+  // Apply user overrides from the import summary header
+  const productEl = document.getElementById('importProduct');
+  const versionEl = document.getElementById('importVersion');
+  const releaseEl = document.getElementById('importRelease');
+  const dateEl = document.getElementById('importDate');
+
+  const overrideProduct = productEl.value;
+  const overrideVersion = versionEl.value.trim();
+  const overrideRelease = releaseEl.value.trim();
+  const overrideDate = dateEl.value;
+
+  const productChanged = overrideProduct !== (productEl.dataset.initialValue || '');
+  const versionChanged = overrideVersion !== (versionEl.dataset.initialValue || '');
+  const releaseChanged = overrideRelease !== (releaseEl.dataset.initialValue || '');
+  const dateChanged = overrideDate !== (dateEl.dataset.initialValue || '');
+
+  const needsVersionOverride = pendingImport.some(e => isUnknownVersion(e.version));
+  const needsDateOverride = pendingImport.some(e => isMissingOrInvalidDate(e.date));
+  const hasValidOverrideVersion = !isUnknownVersion(overrideVersion);
+  const hasValidOverrideDate = !isMissingOrInvalidDate(overrideDate);
+
+  if (needsVersionOverride && !hasValidOverrideVersion) {
+    alert('Version is unknown in this import. Please enter a Version in the Import Preview header before importing.');
+    document.getElementById('importVersion').focus();
+    return;
+  }
+  if (needsDateOverride && !hasValidOverrideDate) {
+    alert('Release Date is unknown in this import. Please select a Release Date in the Import Preview header before importing.');
+    document.getElementById('importDate').focus();
+    return;
+  }
+
+  pendingImport = pendingImport.map(e => ({
+    ...e,
+    product:  productChanged ? overrideProduct : e.product,
+    version:  (versionChanged || needsVersionOverride) && hasValidOverrideVersion ? overrideVersion : e.version,
+    release:  releaseChanged ? overrideRelease : e.release,
+    date:     (dateChanged || needsDateOverride) && hasValidOverrideDate ? overrideDate : e.date,
+  }));
+
+  const existingKeys = new Set(allNotes.filter(n => !n.deletedAt).map(n => `${n.release}|${n.title}`));
+  const newEntries = pendingImport.filter(e => !existingKeys.has(`${e.release}|${e.title}`));
+  const dupes = pendingImport.length - newEntries.length;
+
+  allNotes.push(...newEntries);
+  dataSource = 'local';
+  saveToLocalStorage();
+
+  const status = document.getElementById('importStatus');
+  status.className = 'success';
+  status.textContent = `Imported ${newEntries.length} entries.${dupes > 0 ? ` (${dupes} duplicates skipped)` : ''}`;
+  status.style.display = 'block';
+
+  pendingImport = [];
+  render();
+  setTimeout(() => {
+    closeModal('parseModal');
+    document.getElementById('progressContainer').style.display = 'none';
+  }, 1500);
+}
+
+// ========== REFRESH SHARED DATA ==========
+async function refreshSharedData() {
+  const btn = document.getElementById('refreshBtn');
+  btn.disabled = true;
+  btn.textContent = 'Refreshing...';
+  try {
+    const loaded = await loadFromSharedJson();
+    if (loaded) {
+      render();
+      btn.textContent = '\u21BB Refreshed!';
+    } else {
+      btn.textContent = '\u21BB No shared data';
+    }
+  } catch (e) {
+    btn.textContent = '\u21BB Error';
+  }
+  setTimeout(() => {
+    btn.disabled = false;
+    btn.textContent = '\u21BB Refresh';
+  }, 2000);
+}
+
+// ========== JSON IMPORT/EXPORT ==========
+function exportJSON() {
+  const data = {
+    notes: allNotes,
+    exportedAt: new Date().toISOString(),
+    totalEntries: allNotes.length
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `teamdynamix-release-notes-${new Date().toISOString().split('T')[0]}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function handleJSONImport(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(ev) {
+    try {
+      const data = JSON.parse(ev.target.result);
+      const notes = data.notes || data;
+      if (!Array.isArray(notes)) throw new Error('Invalid format');
+      const valid = notes.filter(n => n.title || n.bodyText || n.bodyHtml || n.body || n.version);
+      if (valid.length === 0) throw new Error('No valid entries found');
+      valid.forEach(n => { if (!n.id) n.id = generateId(); });
+
+      pendingImport = valid;
+      document.getElementById('parsedCount').textContent = valid.length;
+      renderParsedEntries(valid);
+      document.getElementById('rawPreview').textContent = JSON.stringify(data, null, 2).substring(0, 50000);
+      showModal('parseModal');
+    } catch (err) {
+      alert('Failed to parse JSON: ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+}
+
+// ========== MANUAL ENTRY ==========
+function addManualEntry() {
+  editingId = null;
+  document.getElementById('entryModalTitle').textContent = 'Add Release Note Entry';
+  document.getElementById('entryProduct').value = 'Conversational AI';
+  document.getElementById('entryRelease').value = '';
+  document.getElementById('entryVersion').value = '';
+  document.getElementById('entryDate').value = '';
+  document.getElementById('entrySectionNum').value = '';
+  document.getElementById('entryCategory').value = 'Enhancement';
+  document.getElementById('entryTitle').value = '';
+  document.getElementById('entryBody').value = '';
+  showModal('entryModal');
+}
+
+function editEntry(id) {
+  const note = allNotes.find(n => n.id === id);
+  if (!note) return;
+  editingId = id;
+  document.getElementById('entryModalTitle').textContent = 'Edit Release Note Entry';
+  document.getElementById('entryProduct').value = note.product || 'Conversational AI';
+  document.getElementById('entryRelease').value = note.release || '';
+  document.getElementById('entryVersion').value = note.version || '';
+  document.getElementById('entryDate').value = note.date || '';
+  document.getElementById('entrySectionNum').value = note.sectionNum || '';
+  document.getElementById('entryCategory').value = note.category || 'Enhancement';
+  document.getElementById('entryTitle').value = note.title || '';
+  document.getElementById('entryBody').value = note.bodyHtml || note.bodyText || '';
+  showModal('entryModal');
+}
+
+function saveEntry() {
+  const product = document.getElementById('entryProduct').value;
+  const release = document.getElementById('entryRelease').value.trim();
+  const version = document.getElementById('entryVersion').value.trim();
+  const date = document.getElementById('entryDate').value;
+  const sectionNum = parseInt(document.getElementById('entrySectionNum').value) || null;
+  const category = document.getElementById('entryCategory').value;
+  const title = document.getElementById('entryTitle').value.trim();
+  const body = document.getElementById('entryBody').value.trim();
+
+  if (!title && !body) { alert('Please provide at least a title or details.'); return; }
+
+  const isHtml = /<[a-z][\s\S]*>/i.test(body);
+
+  if (editingId) {
+    const note = allNotes.find(n => n.id === editingId);
+    if (note) {
+      Object.assign(note, {
+        product, release, version, date, sectionNum, category,
+        title: title || note.title,
+        bodyHtml: isHtml ? body : '',
+        bodyText: isHtml ? body.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim() : body,
+      });
+    }
+  } else {
+    allNotes.push({
+      id: generateId(),
+      product, release, version, date, sectionNum, category,
+      title: title || body.substring(0, 100),
+      bodyHtml: isHtml ? body : '',
+      bodyText: isHtml ? body.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim() : body,
+      hasDayOneImpact: false,
+      source: 'manual',
+      importedAt: new Date().toISOString()
+    });
+  }
+
+  dataSource = 'local';
+  saveToLocalStorage();
+  closeModal('entryModal');
+  render();
+  editingId = null;
+}
+
+function deleteEntry(id) {
+  if (!confirm('Delete this entry? You can undo this action.')) return;
+  const note = allNotes.find(n => n.id === id && !n.deletedAt);
+  if (!note) return;
+  note.deletedAt = new Date().toISOString();
+  lastDeleteAction = { ids: [id], count: 1, kind: 'single' };
+  dataSource = 'local';
+  saveToLocalStorage();
+  render();
+}
+
+function clearAllData() {
+  const ids = allNotes.filter(n => !n.deletedAt).map(n => n.id);
+  if (ids.length === 0) return;
+  if (!confirm('This will remove all visible entries. You can undo this action. Continue?')) return;
+  const deletedAt = new Date().toISOString();
+  allNotes.forEach(n => {
+    if (!n.deletedAt) n.deletedAt = deletedAt;
+  });
+  lastDeleteAction = { ids, count: ids.length, kind: 'bulk' };
+  dataSource = 'local';
+  saveToLocalStorage();
+  render();
+}
+
+function undoDelete() {
+  if (!lastDeleteAction || !Array.isArray(lastDeleteAction.ids)) return;
+  const idSet = new Set(lastDeleteAction.ids);
+  allNotes.forEach(note => {
+    if (idSet.has(note.id)) delete note.deletedAt;
+  });
+  lastDeleteAction = null;
+  dataSource = 'local';
+  saveToLocalStorage();
+  render();
+}
+
+function dismissUndo() {
+  lastDeleteAction = null;
+  updateUndoBar();
+}
+
+function updateUndoBar() {
+  const bar = document.getElementById('undoBar');
+  const text = document.getElementById('undoText');
+  if (!bar || !text) return;
+
+  if (!lastDeleteAction) {
+    bar.style.display = 'none';
+    text.textContent = '';
+    return;
+  }
+
+  if (lastDeleteAction.kind === 'bulk') {
+    text.textContent = `${lastDeleteAction.count} entries removed.`;
+  } else {
+    text.textContent = 'Entry removed.';
+  }
+  bar.style.display = 'flex';
+}
+
+// ========== OPTIONS DROPDOWN ==========
+function toggleOptionsMenu() {
+  document.getElementById('optionsMenu').classList.toggle('open');
+}
+function closeOptionsMenu() {
+  document.getElementById('optionsMenu').classList.remove('open');
+}
+
+// ========== MODALS ==========
+function showModal(id) {
+  document.getElementById(id).classList.add('active');
+  if (id === 'parseModal') {
+    document.getElementById('importStatus').style.display = 'none';
+  }
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('active');
+}
+
+function switchTab(el, tab) {
+  el.parentElement.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('parsedTab').style.display = tab === 'parsed' ? '' : 'none';
+  document.getElementById('rawTab').style.display = tab === 'raw' ? '' : 'none';
+}
+
+// ========== UTILITIES ==========
+function generateId() {
+  return Date.now().toString(36) + Math.random().toString(36).substr(2, 8);
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function highlightText(escapedHtml, query) {
+  if (!query) return escapedHtml;
+  const terms = query.split(/\s+/).filter(Boolean);
+  let result = escapedHtml;
+  for (const term of terms) {
+    const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    result = result.replace(new RegExp(`(${escaped})`, 'gi'), '<mark>$1</mark>');
+  }
+  return result;
+}
+
+function highlightHtml(html, query) {
+  // Only highlight in text content, not inside HTML tags
+  const terms = query.split(/\s+/).filter(Boolean);
+  for (const term of terms) {
+    const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    // Split by tags, highlight only non-tag parts
+    html = html.replace(/([^<]*)(<[^>]*>)?/g, (match, text, tag) => {
+      const highlighted = text ? text.replace(new RegExp(`(${escaped})`, 'gi'), '<mark>$1</mark>') : '';
+      return highlighted + (tag || '');
+    });
+  }
+  return html;
+}
+
+function compareVersions(a, b) {
+  if (!a && !b) return 0;
+  if (!a) return -1;
+  if (!b) return 1;
+  const pa = a.split('.').map(Number);
+  const pb = b.split('.').map(Number);
+  for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+    const na = pa[i] || 0;
+    const nb = pb[i] || 0;
+    if (na !== nb) return na - nb;
+  }
+  return 0;
+}
+
+function formatDisplayDate(dateStr) {
+  try {
+    const d = new Date(dateStr + 'T00:00:00');
+    if (isNaN(d.getTime())) return dateStr;
+    return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+  } catch (e) { return dateStr; }
+}
+
+function debounce(fn, delay) {
+  let timer;
+  return function(...args) {
+    clearTimeout(timer);
+    timer = setTimeout(() => fn.apply(this, args), delay);
+  };
+}
+
+// ========== IMAGE VIEWER ==========
+let currentImageIndex = 0;
+let allImages = [];
+
+function openImageViewer(img) {
+  // Collect all images on the page
+  allImages = Array.from(document.querySelectorAll('.note-body img'));
+  const clickedIndex = allImages.indexOf(img);
+  
+  if (clickedIndex !== -1) {
+    currentImageIndex = clickedIndex;
+    displayImage(currentImageIndex);
+    document.getElementById('imageViewer').classList.add('active');
+  }
+}
+
+function closeImageViewer() {
+  document.getElementById('imageViewer').classList.remove('active');
+}
+
+function displayImage(index) {
+  if (allImages.length === 0) return;
+  
+  currentImageIndex = (index + allImages.length) % allImages.length;
+  const img = allImages[currentImageIndex];
+  
+  document.getElementById('viewerImage').src = img.src;
+  document.getElementById('viewerImage').alt = img.alt || 'Image';
+  
+  // Update navigation buttons
+  document.getElementById('imagePrevBtn').disabled = allImages.length <= 1;
+  document.getElementById('imageNextBtn').disabled = allImages.length <= 1;
+  
+  // Update info text
+  const info = `${currentImageIndex + 1} / ${allImages.length}`;
+  document.getElementById('imageInfo').textContent = info;
+}
+
+function nextImage() {
+  if (allImages.length > 0) {
+    displayImage(currentImageIndex + 1);
+  }
+}
+
+function prevImage() {
+  if (allImages.length > 0) {
+    displayImage(currentImageIndex - 1);
+  }
+}
+
+// Attach click handlers to images after render
+function attachImageListeners() {
+  document.querySelectorAll('.note-body img').forEach(img => {
+    img.addEventListener('click', (e) => {
+      e.preventDefault();
+      openImageViewer(img);
+    });
+  });
+}
+
+// Close modals on overlay click; close options dropdown on outside click
+document.addEventListener('click', e => {
+  if (e.target.classList.contains('modal-overlay')) e.target.classList.remove('active');
+  if (e.target.id === 'imageViewer') closeImageViewer();
+  if (!e.target.closest('#optionsDropdown')) closeOptionsMenu();
+});
+
+// Keyboard shortcuts
+document.addEventListener('keydown', e => {
+  const imageViewer = document.getElementById('imageViewer');
+  const isImageViewerOpen = imageViewer.classList.contains('active');
+  
+  if (e.key === 'Escape') {
+    if (isImageViewerOpen) closeImageViewer();
+    document.querySelectorAll('.modal-overlay.active').forEach(m => m.classList.remove('active'));
+  }
+  
+  if (isImageViewerOpen) {
+    if (e.key === 'ArrowLeft') { e.preventDefault(); prevImage(); }
+    if (e.key === 'ArrowRight') { e.preventDefault(); nextImage(); }
+  }
+  
+  if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+    e.preventDefault();
+    document.getElementById('searchInput').focus();
+  }
+});
+</script>
+</body>
+</html>
