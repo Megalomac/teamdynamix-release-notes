@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>TeamDynamix Release Notes</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root {
     --primary: #2563eb;
@@ -510,7 +511,7 @@
       <div class="stats" id="statsBar">No release notes loaded</div>
     </div>
     <div class="header-right">
-      <button class="btn-header" onclick="refreshSharedData()" id="refreshBtn" title="Re-fetch the hosted release-notes.json">&#8635; Refresh</button>
+      <button class="btn-header" onclick="refreshSharedData()" id="refreshBtn" title="Re-fetch shared data from Supabase or hosted JSON">&#8635; Refresh</button>
       <div class="dropdown" id="optionsDropdown">
         <button class="btn-header" onclick="toggleOptionsMenu()">Options &#9662;</button>
         <div class="dropdown-menu" id="optionsMenu">
@@ -729,15 +730,48 @@ let lastDeleteAction = null;
 const ITEMS_PER_PAGE = 25;
 let currentPage = 1;
 const SHARED_DATA_URL = './release-notes.json';
-let dataSource = 'none'; // 'shared' | 'local' | 'none'
+const SUPABASE_URL = 'https://edaxyxunkctfkbasdaif.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_YbsGrADSBLp2_cdbXOBXIQ_e11ei7XA';
+let supabaseClient = null;
+let useSupabase = false;
+let dataSource = 'none'; // 'supabase' | 'shared' | 'local' | 'none'
 let sharedLastUpdated = null;
+let autoSyncTimer = null;
 
 // ========== INIT ==========
 document.addEventListener('DOMContentLoaded', async () => {
+  initSupabase();
   await loadInitialData();
   bindEvents();
   render();
+  startAutoSync();
 });
+
+function initSupabase() {
+  try {
+    if (!window.supabase || !SUPABASE_URL || !SUPABASE_ANON_KEY) return;
+    supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    useSupabase = true;
+  } catch (e) {
+    console.warn('Supabase initialization failed, falling back to shared JSON/local storage.', e);
+    supabaseClient = null;
+    useSupabase = false;
+  }
+}
+
+function startAutoSync() {
+  if (!useSupabase || !supabaseClient) return;
+  if (autoSyncTimer) clearInterval(autoSyncTimer);
+  autoSyncTimer = setInterval(async () => {
+    if (editingId) return;
+    const parseOpen = document.getElementById('parseModal')?.classList.contains('active');
+    const entryOpen = document.getElementById('entryModal')?.classList.contains('active');
+    if (parseOpen || entryOpen) return;
+
+    const loaded = await loadFromSupabase();
+    if (loaded) render();
+  }, 30000);
+}
 
 function bindEvents() {
   document.getElementById('searchInput').addEventListener('input', debounce(render, 200));
@@ -779,6 +813,11 @@ function loadFromLocalStorage() {
 }
 
 async function loadInitialData() {
+  if (useSupabase) {
+    const loadedSupabase = await loadFromSupabase();
+    if (loadedSupabase) return;
+  }
+
   const loadedShared = await loadFromSharedJson();
   if (!loadedShared) {
     const loadedLocal = loadFromLocalStorage();
@@ -786,6 +825,118 @@ async function loadInitialData() {
       dataSource = 'none';
       sharedLastUpdated = null;
     }
+  }
+}
+
+function mapSupabaseRowToNote(row) {
+  return {
+    id: row.id || generateId(),
+    release: row.release || '',
+    version: row.version || '',
+    date: row.date || '',
+    product: row.product || '',
+    source: row.source || 'supabase',
+    sourceFile: row.source_file || '',
+    importedAt: row.imported_at || row.created_at || new Date().toISOString(),
+    sectionNum: row.section_num,
+    category: row.category || 'General',
+    title: row.title || '',
+    bodyHtml: row.body_html || '',
+    bodyText: row.body_text || '',
+    hasDayOneImpact: !!row.has_day_one_impact,
+    parentSection: row.parent_section || '',
+    deletedAt: row.deleted_at || null,
+  };
+}
+
+function mapNoteToSupabaseRow(note) {
+  return {
+    id: note.id || generateId(),
+    release: note.release || null,
+    version: note.version || null,
+    date: note.date || null,
+    product: note.product || null,
+    source: note.source || null,
+    source_file: note.sourceFile || null,
+    imported_at: note.importedAt || null,
+    section_num: note.sectionNum ?? null,
+    category: note.category || null,
+    title: note.title || null,
+    body_html: note.bodyHtml || null,
+    body_text: note.bodyText || null,
+    has_day_one_impact: !!note.hasDayOneImpact,
+    parent_section: note.parentSection || null,
+    deleted_at: note.deletedAt || null,
+    updated_at: new Date().toISOString(),
+  };
+}
+
+async function loadFromSupabase() {
+  if (!useSupabase || !supabaseClient) return false;
+  try {
+    const { data, error } = await supabaseClient
+      .from('release_notes')
+      .select('*')
+      .order('date', { ascending: false, nullsFirst: false })
+      .order('section_num', { ascending: true, nullsFirst: false });
+
+    if (error) throw error;
+    if (!Array.isArray(data)) return false;
+
+    allNotes = data
+      .map(mapSupabaseRowToNote)
+      .filter(n => n && (n.title || n.bodyText || n.bodyHtml || n.version));
+
+    const latest = data
+      .map(r => r.updated_at || r.imported_at || r.created_at)
+      .filter(Boolean)
+      .sort()
+      .pop();
+
+    sharedLastUpdated = latest || new Date().toISOString();
+    dataSource = 'supabase';
+    saveToLocalStorage();
+    return true;
+  } catch (e) {
+    console.warn('Supabase not available, using shared JSON/local fallback.', e);
+    return false;
+  }
+}
+
+async function saveToSupabase() {
+  if (!useSupabase || !supabaseClient) return false;
+  try {
+    const rows = allNotes.map(mapNoteToSupabaseRow);
+    if (rows.length === 0) return true;
+
+    const chunkSize = 500;
+    for (let i = 0; i < rows.length; i += chunkSize) {
+      const chunk = rows.slice(i, i + chunkSize);
+      const { error } = await supabaseClient
+        .from('release_notes')
+        .upsert(chunk, { onConflict: 'id' });
+      if (error) throw error;
+    }
+
+    sharedLastUpdated = new Date().toISOString();
+    dataSource = 'supabase';
+    return true;
+  } catch (e) {
+    console.error('Failed to save to Supabase:', e);
+    return false;
+  }
+}
+
+async function persistSharedData() {
+  saveToLocalStorage();
+  if (useSupabase) {
+    const ok = await saveToSupabase();
+    if (!ok) {
+      dataSource = 'local';
+      alert('Saved locally, but failed to sync to Supabase. Your changes are not yet shared with other users.');
+    }
+  } else {
+    dataSource = 'local';
   }
 }
 
@@ -1416,6 +1567,7 @@ function render() {
   const releases = new Set(activeNotes.map(n => n.release).filter(Boolean));
   const products = new Set(activeNotes.map(n => n.product).filter(Boolean));
   const sourceLabel =
+    dataSource === 'supabase' ? 'Supabase' :
     dataSource === 'shared' ? 'Shared JSON' :
     dataSource === 'local' ? 'Local browser' :
     'No data source';
@@ -1625,7 +1777,7 @@ function isMissingOrInvalidDate(value) {
   return isNaN(d.getTime());
 }
 
-function confirmImport() {
+async function confirmImport() {
   if (pendingImport.length === 0) return;
 
   // Apply user overrides from the import summary header
@@ -1673,8 +1825,7 @@ function confirmImport() {
   const dupes = pendingImport.length - newEntries.length;
 
   allNotes.push(...newEntries);
-  dataSource = 'local';
-  saveToLocalStorage();
+  await persistSharedData();
 
   const status = document.getElementById('importStatus');
   status.className = 'success';
@@ -1695,7 +1846,9 @@ async function refreshSharedData() {
   btn.disabled = true;
   btn.textContent = 'Refreshing...';
   try {
-    const loaded = await loadFromSharedJson();
+    const loaded = useSupabase
+      ? await loadFromSupabase()
+      : await loadFromSharedJson();
     if (loaded) {
       render();
       btn.textContent = '\u21BB Refreshed!';
@@ -1785,7 +1938,7 @@ function editEntry(id) {
   showModal('entryModal');
 }
 
-function saveEntry() {
+async function saveEntry() {
   const product = document.getElementById('entryProduct').value;
   const release = document.getElementById('entryRelease').value.trim();
   const version = document.getElementById('entryVersion').value.trim();
@@ -1822,25 +1975,23 @@ function saveEntry() {
     });
   }
 
-  dataSource = 'local';
-  saveToLocalStorage();
+  await persistSharedData();
   closeModal('entryModal');
   render();
   editingId = null;
 }
 
-function deleteEntry(id) {
+async function deleteEntry(id) {
   if (!confirm('Delete this entry? You can undo this action.')) return;
   const note = allNotes.find(n => n.id === id && !n.deletedAt);
   if (!note) return;
   note.deletedAt = new Date().toISOString();
   lastDeleteAction = { ids: [id], count: 1, kind: 'single' };
-  dataSource = 'local';
-  saveToLocalStorage();
+  await persistSharedData();
   render();
 }
 
-function clearAllData() {
+async function clearAllData() {
   const ids = allNotes.filter(n => !n.deletedAt).map(n => n.id);
   if (ids.length === 0) return;
   if (!confirm('This will remove all visible entries. You can undo this action. Continue?')) return;
@@ -1849,20 +2000,18 @@ function clearAllData() {
     if (!n.deletedAt) n.deletedAt = deletedAt;
   });
   lastDeleteAction = { ids, count: ids.length, kind: 'bulk' };
-  dataSource = 'local';
-  saveToLocalStorage();
+  await persistSharedData();
   render();
 }
 
-function undoDelete() {
+async function undoDelete() {
   if (!lastDeleteAction || !Array.isArray(lastDeleteAction.ids)) return;
   const idSet = new Set(lastDeleteAction.ids);
   allNotes.forEach(note => {
     if (idSet.has(note.id)) delete note.deletedAt;
   });
   lastDeleteAction = null;
-  dataSource = 'local';
-  saveToLocalStorage();
+  await persistSharedData();
   render();
 }
 
