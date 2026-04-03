@@ -730,6 +730,7 @@ const ITEMS_PER_PAGE = 25;
 let currentPage = 1;
 const SHARED_DATA_URL = './release-notes.json';
 let dataSource = 'none'; // 'shared' | 'local' | 'none'
+let sharedLastUpdated = null;
 
 // ========== INIT ==========
 document.addEventListener('DOMContentLoaded', async () => {
@@ -767,6 +768,7 @@ function loadFromLocalStorage() {
       if (Array.isArray(parsed)) {
         allNotes = parsed;
         dataSource = 'local';
+        sharedLastUpdated = null;
         return true;
       }
     }
@@ -780,7 +782,10 @@ async function loadInitialData() {
   const loadedShared = await loadFromSharedJson();
   if (!loadedShared) {
     const loadedLocal = loadFromLocalStorage();
-    if (!loadedLocal) dataSource = 'none';
+    if (!loadedLocal) {
+      dataSource = 'none';
+      sharedLastUpdated = null;
+    }
   }
 }
 
@@ -798,6 +803,7 @@ async function loadFromSharedJson() {
       .filter(n => n && (n.title || n.bodyText || n.bodyHtml || n.version))
       .map(n => ({ ...n, id: n.id || generateId() }));
 
+    sharedLastUpdated = payload.lastUpdated || payload.exportedAt || null;
     dataSource = 'shared';
     return true;
   } catch (e) {
@@ -1413,9 +1419,13 @@ function render() {
     dataSource === 'shared' ? 'Shared JSON' :
     dataSource === 'local' ? 'Local browser' :
     'No data source';
+  const sharedUpdatedLabel =
+    dataSource === 'shared' && sharedLastUpdated
+      ? ` | Shared Updated: ${formatDisplayDateTime(sharedLastUpdated)}`
+      : '';
 
   document.getElementById('statsBar').textContent =
-    `${activeNotes.length} entries | ${releases.size} release(s) | ${[...products].join(', ') || 'No products'} | Source: ${sourceLabel}`;
+    `${activeNotes.length} entries | ${releases.size} release(s) | ${[...products].join(', ') || 'No products'} | Source: ${sourceLabel}${sharedUpdatedLabel}`;
 
   const info = document.getElementById('resultsInfo');
   if (query || productFilter || versionFilter || categoryFilter) {
@@ -1963,6 +1973,20 @@ function formatDisplayDate(dateStr) {
     const d = new Date(dateStr + 'T00:00:00');
     if (isNaN(d.getTime())) return dateStr;
     return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+  } catch (e) { return dateStr; }
+}
+
+function formatDisplayDateTime(dateStr) {
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return dateStr;
+    return d.toLocaleString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit'
+    });
   } catch (e) { return dateStr; }
 }
 
