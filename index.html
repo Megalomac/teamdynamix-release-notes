@@ -570,6 +570,7 @@
         <div class="dropdown-menu" id="optionsMenu">
           <button onclick="addManualEntry(); closeOptionsMenu()">+ Add Entry</button>
           <button onclick="exportJSON(); closeOptionsMenu()">Export JSON</button>
+          <button id="importJsonOption" onclick="document.getElementById('importJSONInput').click(); closeOptionsMenu()">Import JSON</button>
           <hr>
           <button onclick="changePasscode(); closeOptionsMenu()">&#128274; Change Passcode</button>
           <button class="danger-item" onclick="clearAllData(); closeOptionsMenu()">Clear All Data</button>
@@ -2214,6 +2215,7 @@ function setPasscodeVerified(verified) {
 function updateLockBadge() {
   const badge = document.getElementById('lockBadge');
   const uploadArea = document.getElementById('uploadArea');
+  const importJsonOption = document.getElementById('importJsonOption');
   if (!badge) return;
   if (!storedPasscodeHash) {
     badge.className = 'lock-badge no-lock';
@@ -2231,6 +2233,9 @@ function updateLockBadge() {
 
   if (uploadArea) {
     uploadArea.style.display = isPasscodeVerified() ? '' : 'none';
+  }
+  if (importJsonOption) {
+    importJsonOption.style.display = isPasscodeVerified() ? '' : 'none';
   }
 }
 
