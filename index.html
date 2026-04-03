@@ -563,7 +563,7 @@
     </div>
     <div class="header-right">
       <span class="sync-badge offline" id="syncBadge" title="Sync status">Offline</span>
-      <button class="lock-badge locked" id="lockBadge" onclick="showPasscodeVerifyModal()" title="Click to unlock write access">&#128274; Locked</button>
+      <button class="lock-badge locked" id="lockBadge" onclick="handleLockBadgeClick()" title="Click to unlock write access">&#128274; Locked</button>
       <button class="btn-header" onclick="refreshSharedData()" id="refreshBtn" title="Re-fetch shared data from Supabase or hosted JSON">&#8635; Refresh</button>
       <div class="dropdown" id="optionsDropdown">
         <button class="btn-header" onclick="toggleOptionsMenu()">Options &#9662;</button>
@@ -2237,6 +2237,18 @@ function updateLockBadge() {
   if (importJsonOption) {
     importJsonOption.style.display = isPasscodeVerified() ? '' : 'none';
   }
+}
+
+function handleLockBadgeClick() {
+  if (!storedPasscodeHash) {
+    changePasscode();
+    return;
+  }
+  if (isPasscodeVerified()) {
+    setPasscodeVerified(false);
+    return;
+  }
+  showPasscodeVerifyModal();
 }
 
 function showPasscodeVerifyModal() {
