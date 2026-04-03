@@ -570,7 +570,6 @@
         <div class="dropdown-menu" id="optionsMenu">
           <button onclick="addManualEntry(); closeOptionsMenu()">+ Add Entry</button>
           <button onclick="exportJSON(); closeOptionsMenu()">Export JSON</button>
-          <button onclick="document.getElementById('importJSONInput').click(); closeOptionsMenu()">Import JSON</button>
           <hr>
           <button onclick="changePasscode(); closeOptionsMenu()">&#128274; Change Passcode</button>
           <button class="danger-item" onclick="clearAllData(); closeOptionsMenu()">Clear All Data</button>
@@ -585,7 +584,7 @@
   <!-- Upload Area -->
   <div class="upload-area" id="uploadArea">
     <h3>Import Release Notes</h3>
-    <p>Import saved TeamDynamix release notes (HTML with images, or PDF).<br>
+    <p>Import saved TeamDynamix release notes (HTML with images).<br>
     <strong>Step 1:</strong> Save the release notes page from TeamDynamix as "Webpage, Complete" (Ctrl+S).<br>
     <strong>Step 2:</strong> Use "Import HTML Folder" below to select the saved folder (includes images).</p>
     <div class="upload-buttons">
@@ -1109,9 +1108,9 @@ async function handleDrop(e) {
     }
   }
 
-  // Fallback to regular file drop
+  // Only folder import is allowed
   if (e.dataTransfer.files.length > 0) {
-    await handleSingleFiles(e.dataTransfer.files);
+    alert('Please use "Import HTML Folder" and select the saved HTML folder. Single-file import is disabled.');
   }
 }
 
