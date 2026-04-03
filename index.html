@@ -53,6 +53,33 @@
   header h1 { font-size: 1.5rem; }
   header .stats { font-size: 0.875rem; opacity: 0.9; }
   header .header-right { display: flex; align-items: center; gap: 10px; }
+
+  .sync-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 999px;
+    white-space: nowrap;
+    transition: background 0.3s, color 0.3s;
+  }
+  .sync-badge::before {
+    content: '';
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+  .sync-badge.connected { background: rgba(34,197,94,0.25); color: #bbf7d0; }
+  .sync-badge.connected::before { background: #4ade80; box-shadow: 0 0 4px #4ade80; }
+  .sync-badge.syncing { background: rgba(251,191,36,0.25); color: #fef08a; }
+  .sync-badge.syncing::before { background: #fbbf24; box-shadow: 0 0 4px #fbbf24; }
+  .sync-badge.error { background: rgba(239,68,68,0.25); color: #fecaca; }
+  .sync-badge.error::before { background: #f87171; box-shadow: 0 0 4px #f87171; }
+  .sync-badge.offline { background: rgba(148,163,184,0.2); color: #cbd5e1; }
+  .sync-badge.offline::before { background: #94a3b8; }
   header .btn-header {
     padding: 6px 14px;
     border: 1px solid rgba(255,255,255,0.5);
@@ -511,6 +538,7 @@
       <div class="stats" id="statsBar">No release notes loaded</div>
     </div>
     <div class="header-right">
+      <span class="sync-badge offline" id="syncBadge" title="Sync status">Offline</span>
       <button class="btn-header" onclick="refreshSharedData()" id="refreshBtn" title="Re-fetch shared data from Supabase or hosted JSON">&#8635; Refresh</button>
       <div class="dropdown" id="optionsDropdown">
         <button class="btn-header" onclick="toggleOptionsMenu()">Options &#9662;</button>
@@ -759,6 +787,13 @@ function initSupabase() {
   }
 }
 
+function setSyncBadge(state, label) {
+  const badge = document.getElementById('syncBadge');
+  if (!badge) return;
+  badge.className = 'sync-badge ' + state;
+  badge.textContent = label;
+}
+
 function startAutoSync() {
   if (!useSupabase || !supabaseClient) return;
   if (autoSyncTimer) clearInterval(autoSyncTimer);
@@ -873,6 +908,7 @@ function mapNoteToSupabaseRow(note) {
 
 async function loadFromSupabase() {
   if (!useSupabase || !supabaseClient) return false;
+  setSyncBadge('syncing', 'Syncing...');
   try {
     const { data, error } = await supabaseClient
       .from('release_notes')
@@ -896,15 +932,18 @@ async function loadFromSupabase() {
     sharedLastUpdated = latest || new Date().toISOString();
     dataSource = 'supabase';
     saveToLocalStorage();
+    setSyncBadge('connected', 'Connected');
     return true;
   } catch (e) {
     console.warn('Supabase not available, using shared JSON/local fallback.', e);
+    setSyncBadge('error', 'Sync Failed');
     return false;
   }
 }
 
 async function saveToSupabase() {
   if (!useSupabase || !supabaseClient) return false;
+  setSyncBadge('syncing', 'Saving...');
   try {
     const rows = allNotes.map(mapNoteToSupabaseRow);
     if (rows.length === 0) return true;
@@ -920,9 +959,12 @@ async function saveToSupabase() {
 
     sharedLastUpdated = new Date().toISOString();
     dataSource = 'supabase';
+    setSyncBadge('connected', 'Saved');
+    setTimeout(() => setSyncBadge('connected', 'Connected'), 2500);
     return true;
   } catch (e) {
     console.error('Failed to save to Supabase:', e);
+    setSyncBadge('error', 'Save Failed');
     return false;
   }
 }
