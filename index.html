@@ -569,8 +569,8 @@
         <button class="btn-header" onclick="toggleOptionsMenu()">Options &#9662;</button>
         <div class="dropdown-menu" id="optionsMenu">
           <button onclick="addManualEntry(); closeOptionsMenu()">+ Add Entry</button>
-          <button onclick="configureSupabaseConnection(); closeOptionsMenu()">Supabase Connection</button>
-          <button onclick="runSupabaseMigrationCheck(); closeOptionsMenu()">Run Supabase Check</button>
+          <button id="supabaseConnectionOption" onclick="configureSupabaseConnection(); closeOptionsMenu()">Supabase Connection</button>
+          <button id="supabaseCheckOption" onclick="runSupabaseMigrationCheck(); closeOptionsMenu()">Run Supabase Check</button>
           <button onclick="exportJSON(); closeOptionsMenu()">Export JSON</button>
           <button id="importJsonOption" onclick="document.getElementById('importJSONInput').click(); closeOptionsMenu()">Import JSON</button>
           <hr>
@@ -2552,7 +2552,11 @@ function updateLockBadge() {
   const badge = document.getElementById('lockBadge');
   const uploadArea = document.getElementById('uploadArea');
   const importJsonOption = document.getElementById('importJsonOption');
+  const supabaseConnectionOption = document.getElementById('supabaseConnectionOption');
+  const supabaseCheckOption = document.getElementById('supabaseCheckOption');
   if (!badge) return;
+  const canShowSensitiveOptions = !storedPasscodeHash || isPasscodeVerified();
+
   if (!storedPasscodeHash) {
     badge.className = 'lock-badge no-lock';
     badge.innerHTML = '&#128275; No Lock Set';
@@ -2572,6 +2576,12 @@ function updateLockBadge() {
   }
   if (importJsonOption) {
     importJsonOption.style.display = isPasscodeVerified() ? '' : 'none';
+  }
+  if (supabaseConnectionOption) {
+    supabaseConnectionOption.style.display = canShowSensitiveOptions ? '' : 'none';
+  }
+  if (supabaseCheckOption) {
+    supabaseCheckOption.style.display = canShowSensitiveOptions ? '' : 'none';
   }
 }
 
