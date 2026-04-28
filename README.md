@@ -55,6 +55,66 @@ When quota is exhausted on one Supabase account, you can move this app to anothe
 
 Tip: The app now attempts to externalize embedded `data:image/...` blobs into Supabase Storage during save, which sharply reduces database egress.
 
+### Supabase Migration Runbook
+
+Use this order for repeatable, low-risk cutovers:
+
+1. **Bootstrap**
+	- Run [supabase/new-project-setup.sql](supabase/new-project-setup.sql) in the target Supabase project.
+2. **Connect**
+	- In the app: **Options -> Supabase Connection**.
+	- Enter new project URL and anon/publishable key.
+3. **Import**
+	- In old environment: **Export JSON**.
+	- In new environment: **Import JSON** and save once.
+4. **Verify (baseline)**
+	- In app: **Options -> Run Supabase Check**.
+	- Run read checks, then write probes.
+5. **Harden**
+	- Run [supabase/hardened-policies.sql](supabase/hardened-policies.sql).
+6. **Verify (post-hardening)**
+	- Re-run **Run Supabase Check** with write probes enabled.
+7. **Operate**
+	- Export a fresh backup JSON.
+	- Monitor Supabase usage for 24-48 hours.
+
+Optional: temporarily disable writes without code changes:
+
+```sql
+update public.app_config
+set value = 'false'
+where key = 'write_enabled';
+```
+
+Re-enable writes:
+
+```sql
+update public.app_config
+set value = 'true'
+where key = 'write_enabled';
+```
+
+### Supabase Check Troubleshooting
+
+Use this quick matrix when **Options -> Run Supabase Check** reports a failure.
+
+| Failed Check | Typical Cause | Quick Fix |
+|---|---|---|
+| `release_notes read` | Missing table or missing SELECT policy | Re-run [supabase/new-project-setup.sql](supabase/new-project-setup.sql), then re-run check |
+| `release_notes write/delete probe` | `write_enabled` is `false` or write policies missing | Run `update public.app_config set value='true' where key='write_enabled';` then re-run [supabase/hardened-policies.sql](supabase/hardened-policies.sql) |
+| `app_config read` | app_config table/policies not present | Re-run [supabase/new-project-setup.sql](supabase/new-project-setup.sql) and ensure key visibility policies exist |
+| `app_config write/delete probe` | Health-check keys blocked by RLS | Re-run latest [supabase/hardened-policies.sql](supabase/hardened-policies.sql) (includes `healthcheck-%` compatibility) |
+| `release-note-images bucket access` | Bucket missing or storage SELECT policy missing | Confirm bucket exists as `release-note-images`; re-run [supabase/new-project-setup.sql](supabase/new-project-setup.sql) |
+| `release-note-images upload/remove probe` | INSERT/DELETE policy missing on `storage.objects` for bucket | Re-run [supabase/hardened-policies.sql](supabase/hardened-policies.sql) and verify storage policies |
+
+If policy creation errors with "already exists", run:
+
+```sql
+rollback;
+```
+
+Then re-run the latest [supabase/hardened-policies.sql](supabase/hardened-policies.sql), which is safe to rerun.
+
 ## How to Use
 
 ### Importing Release Notes
