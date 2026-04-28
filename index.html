@@ -569,6 +569,8 @@
         <button class="btn-header" onclick="toggleOptionsMenu()">Options &#9662;</button>
         <div class="dropdown-menu" id="optionsMenu">
           <button onclick="addManualEntry(); closeOptionsMenu()">+ Add Entry</button>
+          <button onclick="configureSupabaseConnection(); closeOptionsMenu()">Supabase Connection</button>
+          <button onclick="runSupabaseMigrationCheck(); closeOptionsMenu()">Run Supabase Check</button>
           <button onclick="exportJSON(); closeOptionsMenu()">Export JSON</button>
           <button id="importJsonOption" onclick="document.getElementById('importJSONInput').click(); closeOptionsMenu()">Import JSON</button>
           <hr>
@@ -822,8 +824,11 @@ let lastDeleteAction = null;
 const ITEMS_PER_PAGE = 25;
 let currentPage = 1;
 const SHARED_DATA_URL = './release-notes.json';
-const SUPABASE_URL = 'https://edaxyxunkctfkbasdaif.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_YbsGrADSBLp2_cdbXOBXIQ_e11ei7XA';
+const DEFAULT_SUPABASE_URL = 'https://edaxyxunkctfkbasdaif.supabase.co';
+const DEFAULT_SUPABASE_ANON_KEY = 'sb_publishable_YbsGrADSBLp2_cdbXOBXIQ_e11ei7XA';
+let SUPABASE_URL = localStorage.getItem('tdx-supabase-url') || DEFAULT_SUPABASE_URL;
+let SUPABASE_ANON_KEY = localStorage.getItem('tdx-supabase-anon-key') || DEFAULT_SUPABASE_ANON_KEY;
+const SUPABASE_IMAGE_BUCKET = 'release-note-images';
 let supabaseClient = null;
 let useSupabase = false;
 let dataSource = 'none'; // 'supabase' | 'shared' | 'local' | 'none'
@@ -831,6 +836,8 @@ let sharedLastUpdated = null;
 let autoSyncTimer = null;
 let storedPasscodeHash = null;
 let passcodePendingAction = null;
+let lastSupabaseSyncAt = null;
+const AUTO_SYNC_INTERVAL_MS = 5 * 60 * 1000;
 
 // ========== INIT ==========
 document.addEventListener('DOMContentLoaded', async () => {
@@ -844,6 +851,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 function initSupabase() {
   try {
+    useSupabase = false;
+    supabaseClient = null;
     if (!window.supabase || !SUPABASE_URL || !SUPABASE_ANON_KEY) return;
     supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     useSupabase = true;
@@ -851,6 +860,161 @@ function initSupabase() {
     console.warn('Supabase initialization failed, falling back to shared JSON/local storage.', e);
     supabaseClient = null;
     useSupabase = false;
+  }
+}
+
+function isLikelySupabaseUrl(url) {
+  return /^https:\/\/[a-z0-9-]+\.supabase\.co$/i.test(url || '');
+}
+
+function formatCheckError(err) {
+  if (!err) return 'Unknown error';
+  if (typeof err === 'string') return err;
+  return err.message || err.error_description || JSON.stringify(err);
+}
+
+async function runSupabaseMigrationCheck() {
+  if (!useSupabase || !supabaseClient) {
+    alert('Supabase is not configured. Use Options -> Supabase Connection first.');
+    return;
+  }
+
+  setSyncBadge('syncing', 'Checking...');
+  const checks = [];
+
+  async function runCheck(name, fn) {
+    try {
+      await fn();
+      checks.push({ name, ok: true, message: 'OK' });
+    } catch (e) {
+      checks.push({ name, ok: false, message: formatCheckError(e) });
+    }
+  }
+
+  await runCheck('release_notes read', async () => {
+    const { error } = await supabaseClient.from('release_notes').select('id').limit(1);
+    if (error) throw error;
+  });
+
+  await runCheck('app_config read', async () => {
+    const { error } = await supabaseClient.from('app_config').select('key').limit(1);
+    if (error) throw error;
+  });
+
+  await runCheck(`${SUPABASE_IMAGE_BUCKET} bucket access`, async () => {
+    const { error } = await supabaseClient.storage.from(SUPABASE_IMAGE_BUCKET).list('', { limit: 1 });
+    if (error) throw error;
+  });
+
+  const includeWriteChecks = confirm('Also run write probes (temporary test row/object and cleanup)?');
+  if (includeWriteChecks) {
+    const probeId = `healthcheck-${Date.now()}`;
+
+    await runCheck('app_config write/delete probe', async () => {
+      const { error: upsertError } = await supabaseClient
+        .from('app_config')
+        .upsert({ key: probeId, value: new Date().toISOString() }, { onConflict: 'key' });
+      if (upsertError) throw upsertError;
+
+      const { error: deleteError } = await supabaseClient
+        .from('app_config')
+        .delete()
+        .eq('key', probeId);
+      if (deleteError) throw deleteError;
+    });
+
+    await runCheck('release_notes write/delete probe', async () => {
+      const probeRow = {
+        id: probeId,
+        title: 'Health Check',
+        source: 'healthcheck',
+        imported_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+      const { error: upsertError } = await supabaseClient
+        .from('release_notes')
+        .upsert(probeRow, { onConflict: 'id' });
+      if (upsertError) throw upsertError;
+
+      const { error: deleteError } = await supabaseClient
+        .from('release_notes')
+        .delete()
+        .eq('id', probeId);
+      if (deleteError) throw deleteError;
+    });
+
+    await runCheck(`${SUPABASE_IMAGE_BUCKET} upload/remove probe`, async () => {
+      const objectPath = `_healthcheck/${probeId}.txt`;
+      const blob = new Blob([`healthcheck ${new Date().toISOString()}`], { type: 'text/plain' });
+
+      const { error: uploadError } = await supabaseClient
+        .storage
+        .from(SUPABASE_IMAGE_BUCKET)
+        .upload(objectPath, blob, { contentType: 'text/plain', upsert: true });
+      if (uploadError) throw uploadError;
+
+      const { error: removeError } = await supabaseClient
+        .storage
+        .from(SUPABASE_IMAGE_BUCKET)
+        .remove([objectPath]);
+      if (removeError) throw removeError;
+    });
+  }
+
+  const failed = checks.filter(c => !c.ok);
+  setSyncBadge(failed.length ? 'error' : 'connected', failed.length ? 'Check Failed' : 'Connected');
+
+  const report = checks
+    .map(c => `${c.ok ? 'PASS' : 'FAIL'} - ${c.name}${c.ok ? '' : `: ${c.message}`}`)
+    .join('\n');
+
+  alert(`Supabase Check Results\n\n${report}`);
+}
+
+async function configureSupabaseConnection() {
+  const enteredUrl = prompt('Supabase project URL', SUPABASE_URL || '');
+  if (enteredUrl === null) return;
+
+  const enteredKey = prompt('Supabase anon/publishable key', SUPABASE_ANON_KEY || '');
+  if (enteredKey === null) return;
+
+  const nextUrl = enteredUrl.trim();
+  const nextKey = enteredKey.trim();
+
+  if (!isLikelySupabaseUrl(nextUrl)) {
+    alert('Invalid Supabase URL. Expected format: https://<project-ref>.supabase.co');
+    return;
+  }
+  if (!nextKey || nextKey.length < 20) {
+    alert('Supabase anon key appears invalid.');
+    return;
+  }
+
+  localStorage.setItem('tdx-supabase-url', nextUrl);
+  localStorage.setItem('tdx-supabase-anon-key', nextKey);
+  SUPABASE_URL = nextUrl;
+  SUPABASE_ANON_KEY = nextKey;
+
+  lastSupabaseSyncAt = null;
+  storedPasscodeHash = null;
+  setPasscodeVerified(false);
+  initSupabase();
+  await fetchPasscodeHash();
+
+  if (!useSupabase) {
+    setSyncBadge('error', 'Supabase Error');
+    alert('Saved connection settings, but could not initialize Supabase client.');
+    return;
+  }
+
+  const loaded = await loadFromSupabase();
+  if (loaded) {
+    render();
+    startAutoSync();
+    alert('Connected to the new Supabase project.');
+  } else {
+    setSyncBadge('error', 'Sync Failed');
+    alert('Connection updated, but data load failed. Check table, RLS policies, and bucket setup in the new project.');
   }
 }
 
@@ -870,9 +1034,9 @@ function startAutoSync() {
     const entryOpen = document.getElementById('entryModal')?.classList.contains('active');
     if (parseOpen || entryOpen) return;
 
-    const loaded = await loadFromSupabase();
+    const loaded = await loadFromSupabase({ incremental: true });
     if (loaded) render();
-  }, 30000);
+  }, AUTO_SYNC_INTERVAL_MS);
 }
 
 function bindEvents() {
@@ -977,30 +1141,192 @@ function mapNoteToSupabaseRow(note) {
   };
 }
 
-async function loadFromSupabase() {
+function getImageExtensionFromMime(mimeType) {
+  const map = {
+    'image/jpeg': 'jpg',
+    'image/jpg': 'jpg',
+    'image/png': 'png',
+    'image/gif': 'gif',
+    'image/webp': 'webp',
+    'image/svg+xml': 'svg',
+    'image/bmp': 'bmp',
+    'image/tiff': 'tiff'
+  };
+  return map[mimeType] || 'bin';
+}
+
+async function sha256HexFromBuffer(buffer) {
+  const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
+  return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function uploadEmbeddedImageDataUrl(dataUrl, noteId, imageIndex) {
+  if (!useSupabase || !supabaseClient || !SUPABASE_IMAGE_BUCKET) return null;
+
+  const mimeMatch = dataUrl.match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,/i);
+  if (!mimeMatch) return null;
+
+  const mimeType = mimeMatch[1].toLowerCase();
+  try {
+    const response = await fetch(dataUrl);
+    const blob = await response.blob();
+    const arrayBuffer = await blob.arrayBuffer();
+    const hash = await sha256HexFromBuffer(arrayBuffer);
+    const ext = getImageExtensionFromMime(mimeType);
+    const path = `${noteId || 'note'}/${hash}-${imageIndex}.${ext}`;
+
+    const { error } = await supabaseClient.storage
+      .from(SUPABASE_IMAGE_BUCKET)
+      .upload(path, blob, {
+        contentType: mimeType,
+        cacheControl: '31536000',
+        upsert: true,
+      });
+
+    if (error) throw error;
+
+    const { data } = supabaseClient.storage
+      .from(SUPABASE_IMAGE_BUCKET)
+      .getPublicUrl(path);
+
+    return data?.publicUrl || null;
+  } catch (e) {
+    console.warn('Image externalization failed for one embedded image:', e?.message || e);
+    return null;
+  }
+}
+
+async function externalizeEmbeddedImagesInHtml(bodyHtml, noteId) {
+  if (!bodyHtml || !bodyHtml.includes('data:image/')) {
+    return { html: bodyHtml || '', converted: 0, failed: 0 };
+  }
+
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(`<div id="tdx-img-wrap">${bodyHtml}</div>`, 'text/html');
+  const root = doc.getElementById('tdx-img-wrap');
+  if (!root) return { html: bodyHtml, converted: 0, failed: 0 };
+
+  const images = Array.from(root.querySelectorAll('img[src^="data:image/"]'));
+  let converted = 0;
+  let failed = 0;
+
+  for (let i = 0; i < images.length; i++) {
+    const img = images[i];
+    const src = img.getAttribute('src') || '';
+    const publicUrl = await uploadEmbeddedImageDataUrl(src, noteId, i);
+    if (publicUrl) {
+      img.setAttribute('src', publicUrl);
+      converted++;
+    } else {
+      failed++;
+    }
+  }
+
+  return {
+    html: root.innerHTML,
+    converted,
+    failed,
+  };
+}
+
+async function externalizeEmbeddedImagesInAllNotes() {
+  if (!useSupabase || !supabaseClient || !SUPABASE_IMAGE_BUCKET) {
+    return { scanned: 0, converted: 0, failed: 0 };
+  }
+
+  let scanned = 0;
+  let converted = 0;
+  let failed = 0;
+
+  for (const note of allNotes) {
+    if (!note || !note.bodyHtml || !note.bodyHtml.includes('data:image/')) continue;
+    scanned++;
+    const result = await externalizeEmbeddedImagesInHtml(note.bodyHtml, note.id || generateId());
+    note.bodyHtml = result.html;
+    converted += result.converted;
+    failed += result.failed;
+  }
+
+  return { scanned, converted, failed };
+}
+
+function getLatestSupabaseTimestamp(rows) {
+  if (!Array.isArray(rows) || rows.length === 0) return null;
+  return rows
+    .map(r => r.updated_at || r.imported_at || r.created_at)
+    .filter(Boolean)
+    .sort()
+    .pop() || null;
+}
+
+function mergeSupabaseRows(rows) {
+  if (!Array.isArray(rows) || rows.length === 0) return 0;
+
+  const byId = new Map(allNotes.map(note => [note.id, note]));
+  let changed = 0;
+
+  rows.forEach(row => {
+    const mapped = mapSupabaseRowToNote(row);
+    if (!mapped || !mapped.id) return;
+
+    const prev = byId.get(mapped.id);
+    const prevJson = prev ? JSON.stringify(prev) : null;
+    const nextJson = JSON.stringify(mapped);
+
+    if (!prev || prevJson !== nextJson) {
+      byId.set(mapped.id, mapped);
+      changed++;
+    }
+  });
+
+  allNotes = Array.from(byId.values())
+    .filter(n => n && (n.title || n.bodyText || n.bodyHtml || n.version));
+
+  return changed;
+}
+
+async function loadFromSupabase(options = {}) {
+  const incremental = !!options.incremental;
   if (!useSupabase || !supabaseClient) return false;
   setSyncBadge('syncing', 'Syncing...');
   try {
-    const { data, error } = await supabaseClient
+    let query = supabaseClient
       .from('release_notes')
-      .select('*')
-      .order('date', { ascending: false, nullsFirst: false })
-      .order('section_num', { ascending: true, nullsFirst: false });
+      .select('id,release,version,date,product,source,source_file,imported_at,section_num,category,title,body_html,body_text,has_day_one_impact,parent_section,deleted_at,updated_at,created_at');
+
+    if (incremental && lastSupabaseSyncAt) {
+      query = query.gt('updated_at', lastSupabaseSyncAt).order('updated_at', { ascending: true });
+    } else {
+      query = query
+        .order('date', { ascending: false, nullsFirst: false })
+        .order('section_num', { ascending: true, nullsFirst: false });
+    }
+
+    const { data, error } = await query;
 
     if (error) throw error;
     if (!Array.isArray(data)) return false;
 
-    allNotes = data
-      .map(mapSupabaseRowToNote)
-      .filter(n => n && (n.title || n.bodyText || n.bodyHtml || n.version));
+    if (incremental && lastSupabaseSyncAt) {
+      const changed = mergeSupabaseRows(data);
+      if (changed === 0) {
+        setSyncBadge('connected', 'Connected');
+        return false;
+      }
+    } else {
+      allNotes = data
+        .map(mapSupabaseRowToNote)
+        .filter(n => n && (n.title || n.bodyText || n.bodyHtml || n.version));
+    }
 
-    const latest = data
-      .map(r => r.updated_at || r.imported_at || r.created_at)
-      .filter(Boolean)
-      .sort()
-      .pop();
+    const latest = getLatestSupabaseTimestamp(data);
+    if (latest) {
+      lastSupabaseSyncAt = latest;
+      sharedLastUpdated = latest;
+    } else if (!lastSupabaseSyncAt) {
+      sharedLastUpdated = new Date().toISOString();
+    }
 
-    sharedLastUpdated = latest || new Date().toISOString();
     dataSource = 'supabase';
     saveToLocalStorage();
     setSyncBadge('connected', 'Connected');
@@ -1016,6 +1342,14 @@ async function saveToSupabase() {
   if (!useSupabase || !supabaseClient) return false;
   setSyncBadge('syncing', 'Saving...');
   try {
+    const imgResult = await externalizeEmbeddedImagesInAllNotes();
+    if (imgResult.converted > 0) {
+      console.log(`Externalized ${imgResult.converted} embedded images from ${imgResult.scanned} notes.`);
+    }
+    if (imgResult.failed > 0) {
+      console.warn(`Could not externalize ${imgResult.failed} embedded images. Those images remained inline.`);
+    }
+
     const rows = allNotes.map(mapNoteToSupabaseRow);
     if (rows.length === 0) return true;
 
@@ -1028,7 +1362,9 @@ async function saveToSupabase() {
       if (error) throw error;
     }
 
-    sharedLastUpdated = new Date().toISOString();
+    const nowIso = new Date().toISOString();
+    sharedLastUpdated = nowIso;
+    lastSupabaseSyncAt = nowIso;
     dataSource = 'supabase';
     setSyncBadge('connected', 'Saved');
     setTimeout(() => setSyncBadge('connected', 'Connected'), 2500);

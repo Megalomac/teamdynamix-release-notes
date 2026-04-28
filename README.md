@@ -43,6 +43,18 @@ A web-based release notes aggregator and viewer for TeamDynamix products. Import
 3. Set `SHARED_DATA_URL = 'your-url-here'` in the code, or place as `./release-notes.json`
 4. Users will load shared data on startup with local backup
 
+## Switch To A New Supabase Project
+
+When quota is exhausted on one Supabase account, you can move this app to another project quickly:
+
+1. In the app, open **Options -> Supabase Connection**.
+2. Run [supabase/new-project-setup.sql](supabase/new-project-setup.sql) in the new project's SQL editor.
+3. In the app, run **Options -> Run Supabase Check** to verify tables, policies, and storage access.
+4. Enter the new project URL (`https://<project-ref>.supabase.co`) and anon/publishable key.
+5. In the old app/project, **Export JSON**. Then in the new project connection, **Import JSON** and save.
+
+Tip: The app now attempts to externalize embedded `data:image/...` blobs into Supabase Storage during save, which sharply reduces database egress.
+
 ## How to Use
 
 ### Importing Release Notes
