@@ -826,6 +826,11 @@ let currentPage = 1;
 const SHARED_DATA_URL = './release-notes.json';
 const DEFAULT_SUPABASE_URL = 'https://mtlgdnlafrfumqvymlzm.supabase.co';
 const DEFAULT_SUPABASE_ANON_KEY = 'sb_publishable_kuXLSRRCEbOBB0FLhBoYRw_J95WmVpU';
+// If the stored URL points to a different project, it's stale — reset to current defaults.
+if (localStorage.getItem('tdx-supabase-url') && localStorage.getItem('tdx-supabase-url') !== DEFAULT_SUPABASE_URL) {
+  localStorage.setItem('tdx-supabase-url', DEFAULT_SUPABASE_URL);
+  localStorage.setItem('tdx-supabase-anon-key', DEFAULT_SUPABASE_ANON_KEY);
+}
 let SUPABASE_URL = localStorage.getItem('tdx-supabase-url') || DEFAULT_SUPABASE_URL;
 let SUPABASE_ANON_KEY = localStorage.getItem('tdx-supabase-anon-key') || DEFAULT_SUPABASE_ANON_KEY;
 const SUPABASE_IMAGE_BUCKET = 'release-note-images';
