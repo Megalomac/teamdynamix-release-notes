@@ -1095,6 +1095,9 @@ async function loadInitialData() {
       dataSource = 'none';
       sharedLastUpdated = null;
     }
+  } else if (useSupabase) {
+    // Supabase failed but JSON loaded — show Offline instead of Sync Failed
+    setSyncBadge('offline', 'Offline');
   }
 }
 
@@ -2299,9 +2302,12 @@ async function refreshSharedData() {
   btn.disabled = true;
   btn.textContent = 'Refreshing...';
   try {
-    const loaded = useSupabase
-      ? await loadFromSupabase()
-      : await loadFromSharedJson();
+    let loaded = useSupabase ? await loadFromSupabase() : false;
+    if (!loaded) {
+      // Supabase unavailable or not configured — fall back to shared JSON
+      loaded = await loadFromSharedJson();
+      if (loaded) setSyncBadge('offline', 'Offline');
+    }
     if (loaded) {
       render();
       btn.textContent = '\u21BB Refreshed!';
