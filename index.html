@@ -1646,18 +1646,18 @@ function parseTDXHtml(html, fileName, imageFiles) {
     const ogTitle = doc.querySelector('meta[property="og:title"]')?.getAttribute('content') || '';
     const s = ((sectionMeta.getAttribute('content') || '') + ' ' + tagContent + ' ' + ogTitle).toLowerCase();
     if (s.includes('work management')) product = 'Work Management';
-    else if (s.includes('conversational ai') || s.includes('cai') || s.includes('ai & automation') || s.includes('ai and automation') || s.includes('ai-and-automation')) product = 'Conversational AI';
+    else if (s.includes('conversational ai') || s.includes('cai')) product = 'Conversational AI';
     else if (s.includes('ai service assist') || s.includes('service assist')) product = 'AI Service Assist';
-    else if (s.includes('ipaas') || s.includes('integration platform')) product = 'iPaaS';
+    else if (s.includes('ipaas') || s.includes('integration platform') || s.includes('ai & automation') || s.includes('ai and automation') || s.includes('ai-and-automation')) product = 'iPaaS';
     else product = sectionMeta.getAttribute('content').replace(/\s*release\s*notes/i, '').trim();
   }
   if (!product) {
     // Fallback: infer from filename / title
     const src = (fileName + ' ' + (doc.querySelector('title')?.textContent || '')).toLowerCase();
     if (src.includes('work management') || /^article.*12\./.test(fileName.toLowerCase())) product = 'Work Management';
-    else if (src.includes('cai') || src.includes('conversational ai') || src.includes('ai & automation') || src.includes('ai and automation')) product = 'Conversational AI';
+    else if (src.includes('cai') || src.includes('conversational ai')) product = 'Conversational AI';
     else if (src.includes('ai service assist') || src.includes('service assist')) product = 'AI Service Assist';
-    else if (src.includes('ipaas') || src.includes('integration platform')) product = 'iPaaS';
+    else if (src.includes('ipaas') || src.includes('integration platform') || src.includes('ai & automation') || src.includes('ai and automation') || src.includes('ai-and-automation')) product = 'iPaaS';
     else product = 'Conversational AI'; // safest default for existing saved files
   }
 
@@ -1951,9 +1951,9 @@ function parseReleaseNotesFromText(text, fileName) {
   const src = (fileName + ' ' + releaseName).toLowerCase();
   let product = 'Conversational AI'; // default
   if (src.includes('work management')) product = 'Work Management';
-  else if (src.includes('cai') || src.includes('conversational ai') || src.includes('ai & automation') || src.includes('ai and automation')) product = 'Conversational AI';
+  else if (src.includes('cai') || src.includes('conversational ai')) product = 'Conversational AI';
   else if (src.includes('ai service assist') || src.includes('service assist')) product = 'AI Service Assist';
-  else if (src.includes('ipaas') || src.includes('integration platform')) product = 'iPaaS';
+  else if (src.includes('ipaas') || src.includes('integration platform') || src.includes('ai & automation') || src.includes('ai and automation') || src.includes('ai-and-automation')) product = 'iPaaS';
 
   const dateMatch = text.match(/Release\s*Date:\s*([A-Za-z]+\s+\d{1,2}(?:st|nd|rd|th)?,?\s+\d{4})/i);
   const releaseDate = dateMatch ? normalizeDate(dateMatch[1].replace(/(st|nd|rd|th)/i, '')) : '';
