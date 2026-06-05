@@ -54,6 +54,16 @@
   header h1 { font-size: 1.5rem; }
   header .stats { font-size: 0.875rem; opacity: 0.9; }
   header .header-right { display: flex; align-items: center; gap: 10px; }
+  .app-version {
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.18);
+    border: 1px solid rgba(255,255,255,0.45);
+    white-space: nowrap;
+  }
 
   .sync-badge {
     display: inline-flex;
@@ -562,6 +572,7 @@
       <div class="stats" id="statsBar">No release notes loaded</div>
     </div>
     <div class="header-right">
+      <span class="app-version" title="App version">v1.1.2</span>
       <span class="sync-badge offline" id="syncBadge" title="Sync status">Offline</span>
       <button class="lock-badge locked" id="lockBadge" onclick="handleLockBadgeClick()" title="Click to unlock write access">&#128274; Locked</button>
       <button class="btn-header" onclick="refreshSharedData()" id="refreshBtn" title="Re-fetch shared data from Supabase or hosted JSON">&#8635; Refresh</button>
