@@ -572,7 +572,7 @@
       <div class="stats" id="statsBar">No release notes loaded</div>
     </div>
     <div class="header-right">
-      <span class="app-version" title="App version">v1.1.3</span>
+      <span class="app-version" title="App version">v1.1.4</span>
       <span class="sync-badge offline" id="syncBadge" title="Sync status">Offline</span>
       <button class="lock-badge locked" id="lockBadge" onclick="handleLockBadgeClick()" title="Click to unlock write access">&#128274; Locked</button>
       <button class="btn-header" onclick="refreshSharedData()" id="refreshBtn" title="Re-fetch shared data from Supabase or hosted JSON">&#8635; Refresh</button>
@@ -2444,7 +2444,14 @@ function handleJSONImport(e) {
       if (!Array.isArray(notes)) throw new Error('Invalid format');
       const valid = notes.filter(n => n.title || n.bodyText || n.bodyHtml || n.body || n.version);
       if (valid.length === 0) throw new Error('No valid entries found');
-      valid.forEach(n => { if (!n.id) n.id = generateId(); });
+      valid.forEach(n => {
+        if (!n.id) n.id = generateId();
+
+        // Normalize legacy product labels on JSON import (e.g. "AI & Automation" -> "iPaaS").
+        const hint = `${n.product || ''} ${n.release || ''} ${n.sourceFile || ''}`;
+        const normalizedProduct = detectProductFromHint(hint, '');
+        if (normalizedProduct) n.product = normalizedProduct;
+      });
 
       pendingImport = valid;
       document.getElementById('parsedCount').textContent = valid.length;
