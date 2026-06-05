@@ -1703,9 +1703,19 @@ function parseTDXHtml(html, fileName, imageFiles) {
   if (isFullPortal) {
     // Full portal pages vary: some use h2+h3 (WM), others use only numbered h2 (iPaaS).
     const hasH3 = contentDiv.querySelectorAll('h3').length > 0;
-    return hasH3
+    const parsed = hasH3
       ? parseAtH3Level(contentDiv, baseEntry, imageFiles)
       : parseAtH2Level(contentDiv, baseEntry, imageFiles);
+
+    // Some newer iPaaS pages use h4 feature headings with only a few h3 callouts.
+    // If h3 parsing under-detects entries, fall back to h4 parsing and keep the richer result.
+    const h4Count = contentDiv.querySelectorAll('h4').length;
+    if (parsed.length <= 4 && h4Count >= 6) {
+      const h4Parsed = parseAtH4Level(contentDiv, baseEntry, imageFiles);
+      if (h4Parsed.length > parsed.length) return h4Parsed;
+    }
+
+    return parsed;
   }
 
   // Print pages are generally numbered h2 sections.
@@ -1802,6 +1812,61 @@ function parseAtH3Level(contentDiv, baseEntry, imageFiles) {
       title: title,
       bodyHtml: contentHtml,
       bodyText: tempDiv.textContent || '',
+      hasDayOneImpact: contentHtml.toLowerCase().includes('day 1 impact') || contentHtml.toLowerCase().includes('day one impact'),
+    });
+  }
+  return entries;
+}
+
+function parseAtH4Level(contentDiv, baseEntry, imageFiles) {
+  const entries = [];
+  const skipH2 = /^(Contents|Table of Contents|Release Preview Environment|Database Changes|Additional Changes)$/i;
+  const skipH4 = /^(What You Should Do Now|Summary|Details|Recommended|Overview|FAQs?)$/i;
+
+  let currentH2Title = '';
+  let currentH2Num = null;
+  const elements = Array.from(contentDiv.querySelectorAll('h2, h3, h4'));
+
+  for (let i = 0; i < elements.length; i++) {
+    const el = elements[i];
+    const tag = el.tagName;
+    const title = el.textContent.trim().replace(/\s+/g, ' ');
+
+    if (tag === 'H2') {
+      if (skipH2.test(title)) { currentH2Title = ''; continue; }
+      currentH2Title = title;
+      const numMatch = title.match(/^(\d+)\.\s*/);
+      currentH2Num = numMatch ? parseInt(numMatch[1]) : null;
+      continue;
+    }
+
+    if (tag !== 'H4') continue;
+    if (skipH4.test(title)) continue;
+
+    let contentHtml = '';
+    let sibling = el.nextElementSibling;
+    while (sibling && sibling.tagName !== 'H4' && sibling.tagName !== 'H3' && sibling.tagName !== 'H2') {
+      contentHtml += sibling.outerHTML || '';
+      sibling = sibling.nextElementSibling;
+    }
+
+    contentHtml = replaceImageSrcs(contentHtml, imageFiles);
+    contentHtml = cleanContentHtml(contentHtml);
+
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = contentHtml;
+    const bodyText = (tempDiv.textContent || '').trim();
+    if (!bodyText && !contentHtml.includes('<img')) continue;
+
+    entries.push({
+      ...baseEntry,
+      id: generateId(),
+      sectionNum: currentH2Num,
+      category: detectSectionCategory(currentH2Title || title),
+      parentSection: currentH2Title || '',
+      title,
+      bodyHtml: contentHtml,
+      bodyText,
       hasDayOneImpact: contentHtml.toLowerCase().includes('day 1 impact') || contentHtml.toLowerCase().includes('day one impact'),
     });
   }
