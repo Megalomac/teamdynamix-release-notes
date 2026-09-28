@@ -599,11 +599,10 @@
   <div class="upload-area" id="uploadArea">
     <h3>Import Release Notes</h3>
     <p>Import saved TeamDynamix release notes (HTML with images).<br>
-    <strong>Step 1:</strong> Save the release notes page from TeamDynamix as "Webpage, Complete" (Ctrl+S). This creates a ".html" file and a matching "_files" folder next to it.<br>
-    <strong>Step 2:</strong> Click "Import HTML Folder" below, first select the saved ".html" file, then select the matching "_files" folder when prompted.</p>
+    <strong>Step 1:</strong> Save the release notes page from TeamDynamix as "Webpage, Complete" (Ctrl+S). This creates a ".html" file and a matching "_files" folder next to it, inside whatever folder you saved into.<br>
+    <strong>Step 2:</strong> Click "Import HTML Folder" below and select that <em>parent</em> folder — the one containing both the ".html" file and the "_files" folder — not the "_files" folder itself.</p>
     <div class="upload-buttons">
       <button class="btn btn-primary" onclick="pickFolder()">Import HTML Folder</button>
-      <input type="file" id="htmlFileInput" accept=".html,.htm" style="display:none">
       <input type="file" id="folderInput" webkitdirectory style="display:none">
     </div>
   </div>
@@ -1062,7 +1061,6 @@ function bindEvents() {
   document.getElementById('versionFilter').addEventListener('change', () => { currentPage = 1; render(); });
   document.getElementById('categoryFilter').addEventListener('change', () => { currentPage = 1; render(); });
   document.getElementById('sortSelect').addEventListener('change', render);
-  document.getElementById('htmlFileInput').addEventListener('change', handleHtmlFileForFolder);
   document.getElementById('folderInput').addEventListener('change', handleFolderUpload);
   document.getElementById('importJSONInput').addEventListener('change', handleJSONImport);
   document.getElementById('passcodeInput').addEventListener('keydown', e => { if (e.key === 'Enter') verifyPasscode(); });
@@ -1075,23 +1073,8 @@ function bindEvents() {
   upload.addEventListener('drop', handleDrop);
 }
 
-// The saved ".html" file sits one level above its "_files" folder, and a
-// webkitdirectory picker can only see files inside the folder it's given —
-// it has no access to that sibling file. So collect them in two steps: the
-// HTML file first, then the folder, and merge them before parsing.
-let pendingFolderHtmlFile = null;
-
 function pickFolder() {
-  pendingFolderHtmlFile = null;
-  document.getElementById('htmlFileInput').value = '';
-  document.getElementById('htmlFileInput').click();
-}
-
-function handleHtmlFileForFolder(e) {
-  const file = e.target.files[0];
-  e.target.value = '';
-  if (!file) return;
-  pendingFolderHtmlFile = file;
+  document.getElementById('folderInput').value = '';
   document.getElementById('folderInput').click();
 }
 
@@ -1503,18 +1486,11 @@ async function traverseEntry(entry, fileMap) {
 
 async function handleFolderUpload(e) {
   const files = e.target.files;
-  const htmlFile = pendingFolderHtmlFile;
-  pendingFolderHtmlFile = null;
-  if (!files.length && !htmlFile) return;
+  if (!files.length) return;
 
   const fileMap = new Map();
   for (const file of files) {
     fileMap.set('/' + file.webkitRelativePath, file);
-  }
-  // Add the explicitly-selected HTML file last so it takes priority over
-  // any same-named/top-level HTML that may also exist inside the folder.
-  if (htmlFile) {
-    fileMap.set('/' + htmlFile.name, htmlFile);
   }
   await processFileMap(fileMap);
   e.target.value = '';
@@ -1556,7 +1532,12 @@ async function processFileMap(fileMap) {
   }
 
   if (!htmlFile) {
-    alert('No HTML file found in the selected folder. Please select the folder containing the saved HTML file.');
+    const insideFilesFolder = [...fileMap.keys()].some(path => path.includes('_files/') || path.includes('_files\\'));
+    if (insideFilesFolder) {
+      alert('No HTML file found — it looks like you selected the "_files" folder itself. Go up one level and select its parent folder instead (the one that contains both the ".html" file and the "_files" folder).');
+    } else {
+      alert('No HTML file found in the selected folder. Please select the folder containing the saved HTML file.');
+    }
     return;
   }
 
